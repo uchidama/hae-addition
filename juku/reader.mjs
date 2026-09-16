@@ -24,6 +24,11 @@ export const COURSES = {
     eta: 6e-5, gainMin: 0.05, gainMax: 2,
     labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
   },
+  suji10: {
+    size: 12, hz: 220, ink: 0.05, ms: 400, feedbackMs: 300,
+    eta: 6e-5, gainMin: 0.05, gainMax: 2,
+    labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+  },
   hiragana: {
     size: 16, hz: 270, ink: 0.05, ms: 400, feedbackMs: 300,
     eta: 6e-5, gainMin: 0.05, gainMax: 2,

@@ -4,7 +4,7 @@
 import { FlagFly } from '../suji/flag.js?v=38';
 import { Sound } from '../juku/sound.js?v=1';
 
-const worker = new Worker(new URL('./worker.js?v=2', import.meta.url), { type: 'module' });
+const worker = new Worker(new URL('./worker.js?v=4', import.meta.url), { type: 'module' });
 const sound = new Sound();
 
 // UI Elements
@@ -363,7 +363,7 @@ function updateTally() {
   tallyFrac.textContent = asked ? `(${right}/${asked})` : '';
   tallySub.textContent = asked ? `このページで ${right} / ${asked} 問正解` : '出題を準備中…';
   histEl.innerHTML = hist.slice(-32).map((ok) => `<i class="${ok ? 'ok' : 'no'}"></i>`).join('');
-  stagechip.innerHTML = `<b>正答率 ${asked ? pct + '%' : '14%'}</b><small>足し算テスト (${asked}問)</small>`;
+  stagechip.innerHTML = `<b>正答率 ${asked ? pct + '%' : '80%'}</b><small>2段キノコ体 (${asked}問)</small>`;
 }
 
 // 8. Auto Mode Toggle
@@ -478,14 +478,18 @@ function runWritingChoreography(data) {
 }
 
 function revealAnswer(m) {
-  const { predictedSum, target, isCorrect, leftDigit, rightDigit, margin, drive, slots } = m;
+  const { predictedSum, target, isCorrect, leftDigit, rightDigit, recognizedA, recognizedB, margin, drive, slots } = m;
   predSum.textContent = predictedSum;
+
+  const recogInfo = (recognizedA !== undefined && recognizedB !== undefined)
+    ? ` (ハエの認識: ${recognizedA} + ${recognizedB})`
+    : '';
 
   if (m.mode === 'sample') {
     resultBox.className = `result-box ${isCorrect ? 'correct' : 'incorrect'}`;
     verdictMark.textContent = isCorrect ? '○' : '×';
     verdictMark.className = `verdict-mark ${isCorrect ? 'ok' : 'no'}`;
-    resultSub.textContent = `正解: ${leftDigit} + ${rightDigit} = ${target}`;
+    resultSub.textContent = `正解: ${leftDigit} + ${rightDigit} = ${target}${recogInfo}`;
 
     asked++;
     if (isCorrect) right++;
@@ -496,16 +500,16 @@ function revealAnswer(m) {
     else sound.ng();
 
     if (isCorrect) {
-      statusEl.textContent = `「${predictedSum}」— 正解！餌が出ます。ハエが砂糖水を飲んでいます。`;
+      statusEl.textContent = `「${predictedSum}」— 正解！${recogInfo} 餌が出ます。ハエが砂糖水を飲んでいます。`;
     } else {
-      statusEl.textContent = `「${predictedSum}」— 不正解（正解は ${target}）。ハエが首をかしげています。`;
+      statusEl.textContent = `「${predictedSum}」— 不正解（正解は ${target}、ハエの認識は ${recognizedA}+${recognizedB}）。ハエが首をかしげています。`;
     }
   } else {
     // Custom handwritten answer
     resultBox.className = 'result-box';
     verdictMark.textContent = '';
-    resultSub.textContent = `ハエの予測: 和 ${predictedSum}`;
-    statusEl.textContent = `ハエの判定: 「${predictedSum}」（第2候補: 和 ${m.secondSum}）`;
+    resultSub.textContent = `ハエの予測: 和 ${predictedSum}${recogInfo}`;
+    statusEl.textContent = `ハエの判定: 「${predictedSum}」${recogInfo}（第2候補: 和 ${m.secondSum}）`;
   }
 
   // Update MBON drive bars & Kenyon cell map

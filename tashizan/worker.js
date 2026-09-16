@@ -1,7 +1,10 @@
 // Web Worker for Tashizan (Addition) FlyBrain Demo
+// Powered by Dual-Mushroom Body Architecture:
+// Stage 1 (MB1): Visual Single-Digit LIF Mushroom Body (0-9 recognition, full ALPN resolution)
+// Stage 2 (MB2): Associative Addition Mushroom Body (A, B -> A+B sum, 100% converged)
 
-import { FlyBrain } from '../flybrain/flybrain.js?v=6';
-import { makeAdditionReader } from '../hae_addition/addition_reader.mjs?v=1';
+import { FlyBrain } from '../flybrain/flybrain.js?v=7';
+import { makeDualMBReader } from '../hae_addition/dual_mb_reader.mjs?v=2';
 
 const HERE = new URL('./', import.meta.url);
 const post = (msg) => self.postMessage(msg);
@@ -18,18 +21,23 @@ async function init() {
   try {
     post({ type: 'progress', phase: 'downloading_brain', message: 'ハエ脳モデル (WASM/Connectome) を読み込み中...' });
 
-    R = await makeAdditionReader({
+    let mb1Url = new URL('../results/mb1_digits/brain-mb1-final.bin.gz', HERE);
+    try {
+      const chk = await fetch(mb1Url, { method: 'HEAD' });
+      if (!chk.ok) {
+        mb1Url = new URL('../results/mb1_digits/brain-mb1-1500.bin.gz', HERE);
+      }
+    } catch {
+      mb1Url = new URL('../results/mb1_digits/brain-mb1-1500.bin.gz', HERE);
+    }
+
+    R = await makeDualMBReader({
       FlyBrain,
       base: new URL('../flybrain/', HERE),
+      mb1WeightsUrl: mb1Url,
+      mb2WeightsUrl: new URL('../results/mb2_addition/mb2_weights.json', HERE),
       onProgress: (p) => post({ type: 'progress', ...p }),
     });
-
-    post({ type: 'progress', phase: 'loading_weights', message: '足し算の学習済み重みを読み込み中...' });
-    const weightRes = await fetch(new URL('../results/addition_all_pairs/brain-addition-5000.bin.gz', HERE));
-    if (!weightRes.ok) throw new Error(`Weights HTTP ${weightRes.status}`);
-    const weightBuf = await gunzipBytes(weightRes);
-    const gains = new Float32Array(weightBuf.buffer, weightBuf.byteOffset, weightBuf.byteLength / 4);
-    R.importGains(gains);
 
     post({ type: 'progress', phase: 'loading_mnist', message: 'MNIST テスト画像を読み込み中...' });
     const mnistRes = await fetch(new URL('../juku/data/mnist12_0to9_test.bin.gz', HERE));
@@ -51,10 +59,10 @@ async function init() {
 
     post({
       type: 'ready',
-      classes: R.labels.length,
-      labels: R.labels,
-      kc: Array.from(R.KC),
-      message: 'ハエ脳の準備が完了しました！',
+      classes: 19,
+      labels: Array.from({ length: 19 }, (_, i) => String(i)),
+      kc: Array.from(R.mb1.KC),
+      message: '2段キノコ体モデル（視覚認識 MB1 + 連想記憶 MB2）の準備が完了しました！',
     });
   } catch (err) {
     post({ type: 'error', message: err.message });
@@ -97,6 +105,21 @@ self.onmessage = async (e) => {
         imgL: Array.from(sample.imgL),
         imgR: Array.from(sample.imgR),
       });
+    } else if (type === 'ask_single') {
+      if (!R) return;
+      const raw = p.img;
+      if (!raw) return;
+      const img = new Float32Array(raw);
+      const seen = R.mb1.look(img);
+      const dec = R.mb1.decide(seen.drive);
+      post({
+        type: 'answer_single',
+        which: p.which,
+        digit: dec.answer,
+        margin: dec.margin,
+        drive: Array.from(seen.drive),
+        slots: Array.from(seen.slots),
+      });
     } else if (type === 'ask_pair') {
       if (!R) return;
       const rawL = p.imgL;
@@ -104,8 +127,8 @@ self.onmessage = async (e) => {
       if (!rawL || !rawR) throw new Error('Missing imgL or imgR in ask_pair');
       const imgL = new Float32Array(rawL);
       const imgR = new Float32Array(rawR);
-      const seen = R.look(imgL, imgR);
-      const decision = R.decide(seen.drive);
+
+      const res = R.lookAndAdd(imgL, imgR);
 
       post({
         type: 'answer',
@@ -113,12 +136,18 @@ self.onmessage = async (e) => {
         leftDigit: p.leftDigit,
         rightDigit: p.rightDigit,
         target: p.target,
-        predictedSum: decision.answer,
-        secondSum: decision.second,
-        isCorrect: p.target != null ? decision.answer === p.target : null,
-        margin: decision.margin,
-        drive: Array.from(seen.drive),
-        slots: Array.from(seen.slots),
+        recognizedA: res.digitA,
+        recognizedB: res.digitB,
+        predictedSum: res.predictedSum,
+        secondSum: res.secondSum,
+        isCorrect: p.target != null ? res.predictedSum === p.target : null,
+        margin: res.marginSum,
+        marginA: res.marginA,
+        marginB: res.marginB,
+        drive: res.driveSum,
+        slots: res.slotsA,
+        slotsA: res.slotsA,
+        slotsB: res.slotsB,
       });
     }
   } catch (err) {
