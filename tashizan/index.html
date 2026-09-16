@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>ハエに足し算を教えてみた — キノコ体による手書き数字の足し算</title>
-<meta name="description" content="ショウジョウバエのキノコ体モデルに手書き数字2枚の足し算（0〜9 + 0〜9 → 0〜18）を学習させたインタラクティブデモ。">
+<title>ハエに足し算を教えてみた — キノコ体による手書き数字2枚の足し算</title>
+<meta name="description" content="ショウジョウバエのキノコ体モデルに手書き数字2枚の足し算（0〜9 + 0〜9 → 0〜18）を学習させたインタラクティブデモ。3Dのハエが数字を2つ書き、足し算を判定します。">
 <style>
   :root {
     --bg: #0d1014;
@@ -22,12 +22,14 @@
     margin: 0;
     background: var(--bg);
     color: var(--ink);
-    font: 15px/1.6 system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
-    padding: 20px 16px 40px;
-    max-width: 820px;
+    font: 15px/1.65 system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    padding-block: 20px 40px;
+    padding-inline: 16px;
+    max-width: 840px;
     margin-inline: auto;
+    -webkit-text-size-adjust: 100%;
   }
-  h1 { font-size: 1.4rem; margin: 0 0 6px; display: flex; align-items: center; gap: 8px; }
+  h1 { font-size: 1.35rem; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
   .sub { color: var(--dim); font-size: 0.85rem; margin: 0 0 16px; }
   .panel {
     background: var(--panel);
@@ -37,7 +39,7 @@
     margin-bottom: 16px;
   }
   h2 {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 600;
     letter-spacing: 0.06em;
     color: var(--dim);
@@ -46,63 +48,201 @@
     justify-content: space-between;
     align-items: center;
   }
+
   /* 3D Fly Stage */
-  #flyCanvas {
+  .flywrap { position: relative; }
+  #fly {
     display: block;
     width: 100%;
-    height: 220px;
+    height: 270px;
     border-radius: 10px;
     background: radial-gradient(120% 100% at 50% 20%, #1c242e, #0a0d11);
   }
-  /* Quiz / Drawing Area */
-  .quiz-container {
+  .stagechip {
+    display: block;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 5px 12px;
+    border-radius: 14px;
+    background: rgba(9, 12, 16, 0.75);
+    border: 1px solid #2b3642;
+    font-size: 0.78rem;
+    color: #dbe5ee;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    font-variant-numeric: tabular-nums;
+  }
+  .stagechip b { color: #59b7ff; }
+  .stagechip small { color: var(--dim); margin-left: 5px; }
+
+  .soundbtn {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    border: 1px solid #2e3b48;
+    color: var(--ink);
+    background: rgba(13, 16, 20, 0.78);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin: 12px 0 16px;
+    transition: background 0.15s;
   }
+  .soundbtn:hover { background: rgba(28, 36, 46, 0.9); }
+
+  .loadbar {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    width: min(84%, 400px);
+    padding: 8px 14px 10px;
+    background: rgba(9, 12, 16, 0.85);
+    border: 1px solid #2b3642;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    color: #c3cfdb;
+    transition: opacity 0.5s;
+    z-index: 5;
+  }
+  .loadbar[hidden] { display: none; }
+  .loadbar.done { opacity: 0; pointer-events: none; }
+  .lbtrack {
+    height: 7px;
+    margin-top: 6px;
+    border-radius: 4px;
+    background: #1f272f;
+    overflow: hidden;
+  }
+  .lbtrack i {
+    display: block;
+    height: 100%;
+    width: 0%;
+    border-radius: 4px;
+    background: #3a9be6;
+    transition: width 0.25s ease;
+  }
+
+  /* Quiz Stage */
+  .quizrow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 14px;
+    position: relative;
+  }
+  .autobadge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 4;
+    white-space: nowrap;
+    padding: 2px 10px 2px 22px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #bff0d2;
+    background: #122a1c;
+    border: 1px solid #2f6b49;
+    pointer-events: none;
+  }
+  .autobadge::before {
+    content: "";
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    margin-top: -3.5px;
+    border-radius: 50%;
+    background: var(--ok);
+    animation: autopulse 1.4s ease-in-out infinite;
+  }
+  @keyframes autopulse { 50% { opacity: 0.25; } }
+  .autobadge[hidden] { display: none; }
+
   .operand-card {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 6px;
-  }
-  .canvas-wrapper {
     position: relative;
-    width: 132px;
-    height: 132px;
   }
-  .draw-pad {
+  .qdraw {
+    position: relative;
+    width: 126px;
+    height: 126px;
+    border-radius: 10px;
+    background: #080b0e;
+    border: 2px solid var(--line);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .operand-card.writing .qdraw {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(89, 183, 255, 0.35);
+  }
+  .operand-card canvas.drawpad {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
     border-radius: 8px;
-    background: #080b0e;
-    border: 1px dashed #32404e;
     cursor: crosshair;
     touch-action: none;
   }
-  .draw-pad:focus { outline: none; border-color: var(--accent); }
-  .preview-cvs {
-    image-rendering: pixelated;
-    width: 36px;
-    height: 36px;
-    border-radius: 4px;
-    border: 1px solid var(--line);
-    background: #000;
+  .xclear {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    z-index: 3;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0.95rem;
+    line-height: 1;
+    background: rgba(20, 26, 33, 0.85);
+    border: 1px solid #3a4552;
+    color: #dbe5ee;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  .op-sign {
+  .xclear[hidden] { display: none; }
+  .card-label {
+    font-size: 0.76rem;
+    color: var(--dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-label b { color: #e6edf3; font-size: 0.95rem; }
+
+  .opsign {
     font-size: 2.2rem;
     font-weight: 700;
     color: var(--dim);
+    line-height: 1;
+    user-select: none;
   }
+
+  /* Result Box */
   .result-box {
-    width: 110px;
-    height: 132px;
-    background: #10141a;
+    width: 126px;
+    height: 126px;
+    background: #11161c;
     border: 2px solid var(--line);
     border-radius: 10px;
     display: flex;
@@ -110,70 +250,136 @@
     align-items: center;
     justify-content: center;
     position: relative;
+    transition: all 0.25s ease;
   }
-  .result-box.correct { border-color: var(--ok); background: #0e1e16; }
-  .result-box.incorrect { border-color: var(--wrong); background: #221215; }
+  .result-box.correct {
+    border-color: var(--ok);
+    background: #0e2017;
+    box-shadow: 0 0 14px rgba(84, 217, 140, 0.25);
+  }
+  .result-box.incorrect {
+    border-color: var(--wrong);
+    background: #241316;
+    box-shadow: 0 0 14px rgba(255, 107, 107, 0.25);
+  }
   .predicted-sum {
-    font-size: 3.2rem;
+    font-size: 3.4rem;
     font-weight: 700;
     line-height: 1;
     font-variant-numeric: tabular-nums;
   }
-  .result-label {
-    font-size: 0.75rem;
-    color: var(--dim);
-    margin-top: 4px;
-  }
-  .badge-tag {
+  .verdict-mark {
     position: absolute;
     top: 6px;
-    right: 6px;
-    font-size: 0.68rem;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-weight: 600;
+    right: 8px;
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1;
   }
-  .badge-tag.ok { background: var(--ok); color: #052210; }
-  .badge-tag.no { background: var(--wrong); color: #fff; }
+  .verdict-mark.ok { color: var(--ok); }
+  .verdict-mark.no { color: var(--wrong); }
+  .result-sub {
+    font-size: 0.72rem;
+    color: var(--dim);
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Tally */
+  .tally-box {
+    min-width: 130px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .scoreline {
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ink);
+  }
+  .scoreline small { font-size: 0.82rem; color: var(--dim); font-weight: normal; margin-left: 4px; }
+  .tally-label { font-size: 0.76rem; color: var(--dim); }
+  .hist {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 4px;
+    max-width: 220px;
+  }
+  .hist i {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: #232c36;
+  }
+  .hist i.ok { background: var(--ok); }
+  .hist i.no { background: var(--wrong); }
+
   /* Controls */
   .btn-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
     justify-content: center;
     margin-top: 14px;
   }
-  button {
+  button.action-btn {
     font: inherit;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     color: var(--ink);
-    background: #1b232c;
-    border: 1px solid #2e3b48;
+    background: #1b2229;
+    border: 1px solid var(--line);
     border-radius: 8px;
-    padding: 9px 16px;
+    padding: 8px 14px;
     cursor: pointer;
     transition: all 0.15s ease;
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    -webkit-tap-highlight-color: transparent;
   }
-  button:hover:not(:disabled) { background: #26323f; border-color: #485c70; }
-  button.primary { background: #1a4267; border-color: #2b679e; color: #d6ecff; }
-  button.primary:hover:not(:disabled) { background: #235787; border-color: #3b88cf; }
-  button:disabled { opacity: 0.4; cursor: not-allowed; }
-  /* Status Banner */
-  #statusBanner {
+  button.action-btn:hover:not(:disabled) {
+    background: #242d37;
+    border-color: #3b4b5a;
+  }
+  button.action-btn.primary {
+    background: #1a3f61;
+    border-color: #2b6196;
+    color: #e0f0ff;
+  }
+  button.action-btn.primary:hover:not(:disabled) {
+    background: #245582;
+    border-color: #3b7dc2;
+  }
+  button.action-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  /* Status Line */
+  #status {
     font-size: 0.85rem;
-    padding: 8px 12px;
-    border-radius: 6px;
-    background: #1b2229;
     color: var(--dim);
-    margin-bottom: 14px;
+    min-height: 1.6em;
+    margin: 12px 0 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #10151a;
+    border: 1px solid #1c242e;
     display: flex;
     align-items: center;
     gap: 8px;
   }
-  #statusBanner.ready { background: #13241b; color: #a3e8bc; }
+  #status.highlight { color: #9fd0ff; border-color: #29435c; }
+  .note {
+    font-size: 0.82rem;
+    color: var(--dim);
+    margin: 8px 0 0;
+    line-height: 1.6;
+  }
+  .note b { color: #c3cfdb; font-weight: 600; }
+
   /* 19 Classes Drive Meter */
   .drive-grid {
     display: grid;
@@ -186,15 +392,15 @@
     border: 1px solid var(--line);
     border-radius: 6px;
     padding: 6px 8px;
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     display: flex;
     flex-direction: column;
     gap: 3px;
-    transition: border-color 0.2s;
+    transition: all 0.2s ease;
   }
   .drive-item.winner {
     border-color: var(--accent);
-    background: #142433;
+    background: #132435;
   }
   .drive-header {
     display: flex;
@@ -203,100 +409,265 @@
   }
   .drive-bar-bg {
     height: 5px;
-    background: #1d252e;
+    background: #1c242e;
     border-radius: 3px;
     overflow: hidden;
   }
   .drive-bar-fill {
     height: 100%;
-    background: #415569;
+    background: #3c4f62;
     border-radius: 3px;
     width: 0%;
     transition: width 0.3s ease;
   }
   .drive-item.winner .drive-bar-fill { background: var(--accent); }
+
+  /* Kenyon Cells Canvas */
+  #kc {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    background: #0a0d11;
+  }
+  .kleg {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 0.78rem;
+    color: var(--dim);
+    margin-top: 10px;
+  }
+  .kleg i {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+
+  /* Comparison Table */
+  table.comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    margin-top: 8px;
+  }
+  table.comp-table th, table.comp-table td {
+    padding: 7px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+  }
+  table.comp-table th { color: var(--dim); font-weight: 600; }
+  table.comp-table tr.highlight td { background: #142332; font-weight: 600; color: #d6ecff; }
+
+  /* Navigation Links */
   nav.links {
     display: flex;
-    gap: 14px;
+    gap: 16px;
     flex-wrap: wrap;
-    margin-top: 20px;
+    margin-top: 24px;
     font-size: 0.85rem;
   }
   nav.links a { color: var(--accent); text-decoration: none; }
   nav.links a:hover { text-decoration: underline; }
+
+  /* ---------------- Responsive Desktop Layout (>= 900px) ---------------- */
+  @media (min-width: 900px) {
+    body {
+      max-width: 1220px;
+      padding-block: 16px 40px;
+    }
+    .panel.quiz {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(360px, 1fr);
+      column-gap: 20px;
+      align-items: start;
+      padding: 16px;
+    }
+    .panel.quiz > h2 { grid-column: 1 / -1; }
+    .panel.quiz > .flywrap {
+      grid-column: 1;
+      grid-row: 2 / span 20;
+    }
+    .panel.quiz > :not(h2):not(.flywrap) { grid-column: 2; }
+    #fly {
+      height: 480px;
+      border-radius: 10px;
+    }
+    .quizrow {
+      margin-top: 6px;
+      justify-content: flex-start;
+    }
+  }
+
+  /* ---------------- Responsive Mobile Layout (< 640px) ---------------- */
+  @media (max-width: 640px) {
+    body { padding-inline: 12px; }
+    #fly { height: 240px; }
+    .qdraw { width: 106px; height: 106px; }
+    .result-box { width: 106px; height: 106px; }
+    .predicted-sum { font-size: 2.8rem; }
+    .opsign { font-size: 1.8rem; }
+  }
 </style>
 </head>
 <body>
 
 <h1><span>🪰</span> ハエに足し算を教えてみた</h1>
 <div class="sub">
-  ショウジョウバエ脳モデル（キノコ体）に 2枚の手書き数字（0〜9）を見せて足し算（0〜18）を解かせる実験デモ
+  ショウジョウバエのキノコ体（5,177 KC / 19 MBON）に手書き数字 2 枚を見せ、足し算（0〜9 + 0〜9 → 0〜18）を解かせる 3D 実験デモ
 </div>
 
-<div id="statusBanner">
-  <span>⏳</span> <span id="statusText">ハエ脳モデル (WebAssembly / FlyWire Connectome) を準備中...</span>
-</div>
+<!-- Main Quiz Stage -->
+<div class="panel quiz">
+  <h2>
+    <span>出題 → 3Dのハエが数字を2つ書いて足し算判定</span>
+    <small id="flyStateText" style="color:var(--dim);font-weight:normal">ハエ準備中</small>
+  </h2>
 
-<!-- 3D Fly View -->
-<div class="panel">
-  <h2><span>ハエの様子 (3D 生体モデル)</span><small id="flyStateText" style="color:var(--dim)">待機中</small></h2>
-  <canvas id="flyCanvas"></canvas>
-</div>
+  <!-- 3D Fly Stage (Left column on desktop) -->
+  <div class="flywrap">
+    <canvas id="fly"></canvas>
+    <div id="stagechip" class="stagechip"><b>足し算テスト 正答率 14%</b><small>19クラス判定</small></div>
+    <button id="soundbtn" class="soundbtn" aria-label="音声のオン/オフ" aria-pressed="true">🔊</button>
+    <div id="loadbar" class="loadbar">
+      <span id="loadText">脳モデルを読み込み中…</span>
+      <div class="lbtrack"><i id="lbFill"></i></div>
+    </div>
+  </div>
 
-<!-- Addition Quiz Stage -->
-<div class="panel">
-  <h2><span>足し算 出題ステージ (0〜9 + 0〜9 → 0〜18)</span></h2>
+  <!-- Quiz Row: Operand A + Operand B = Result (Right column on desktop) -->
+  <div class="quizrow">
+    <div id="autobadge" class="autobadge">自動出題中</div>
 
-  <div class="quiz-container">
-    <!-- Left Operand -->
-    <div class="operand-card">
-      <div class="canvas-wrapper">
-        <canvas id="padLeft" class="draw-pad" width="132" height="132"></canvas>
+    <!-- Operand A -->
+    <div class="operand-card" id="cardA">
+      <div class="qdraw">
+        <button class="xclear" id="clearA" hidden aria-label="Aを消す">×</button>
+        <canvas id="padLeft" class="drawpad" width="132" height="132" title="ここに数字Aを書くこともできます"></canvas>
+        <canvas id="prevLeft" width="12" height="12" style="display:none"></canvas>
       </div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <canvas id="prevLeft" class="preview-cvs" width="12" height="12"></canvas>
-        <span style="font-size:0.75rem;color:var(--dim)">数字 A</span>
-      </div>
+      <div class="card-label">数字 A: <b id="labelA">–</b></div>
     </div>
 
-    <div class="op-sign">+</div>
+    <div class="opsign">+</div>
 
-    <!-- Right Operand -->
-    <div class="operand-card">
-      <div class="canvas-wrapper">
-        <canvas id="padRight" class="draw-pad" width="132" height="132"></canvas>
+    <!-- Operand B -->
+    <div class="operand-card" id="cardB">
+      <div class="qdraw">
+        <button class="xclear" id="clearB" hidden aria-label="Bを消す">×</button>
+        <canvas id="padRight" class="drawpad" width="132" height="132" title="ここに数字Bを書くこともできます"></canvas>
+        <canvas id="prevRight" width="12" height="12" style="display:none"></canvas>
       </div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <canvas id="prevRight" class="preview-cvs" width="12" height="12"></canvas>
-        <span style="font-size:0.75rem;color:var(--dim)">数字 B</span>
-      </div>
+      <div class="card-label">数字 B: <b id="labelB">–</b></div>
     </div>
 
-    <div class="op-sign">=</div>
+    <div class="opsign">=</div>
 
-    <!-- Result / Prediction -->
+    <!-- Predicted Sum & Verdict -->
     <div class="result-box" id="resultBox">
-      <span class="badge-tag" id="badgeTag" style="display:none"></span>
+      <span class="verdict-mark" id="verdictMark">–</span>
       <span class="predicted-sum" id="predSum">?</span>
-      <span class="result-label" id="resultLabel">ハエの予測</span>
+      <span class="result-sub" id="resultSub">ハエの予測</span>
+    </div>
+
+    <!-- Running Score Tally -->
+    <div class="tally-box">
+      <div class="scoreline"><span id="tallyPct">–</span><small id="tallyFrac"></small></div>
+      <div class="tally-label" id="tallySub">出題を準備中…</div>
+      <div class="hist" id="hist"></div>
     </div>
   </div>
 
-  <!-- Controls -->
+  <!-- Controls Row -->
   <div class="btn-row">
-    <button id="btnSample" class="primary"><span>🎲</span> MNISTからランダム出題</button>
-    <button id="btnSolve"><span>🧠</span> 手書きをハエに解かせる</button>
-    <button id="btnClear"><span>🧹</span> 手書きクリア</button>
+    <button id="autobtn" class="action-btn primary">自動停止</button>
+    <button id="btnSample" class="action-btn"><span>🎲</span> ランダム出題</button>
+    <button id="btnSolve" class="action-btn"><span>🧠</span> 手書きを解かせる</button>
+    <button id="btnClear" class="action-btn"><span>🧹</span> 手書きクリア</button>
   </div>
+
+  <!-- Commentary Status -->
+  <div id="status">ハエ脳モデル (WebAssembly / FlyWire Connectome) を読み込んでいます…</div>
+
+  <p class="note" id="flynote">
+    問題は MNIST テストセットから。ハエは 2 つの数字を前脚で順番に地面に書き、キノコ体で足し算を計算して、和（0〜18）の旗を掲げて判定します。
+    <b>正解なら砂糖水のご褒美が落ちてきて、歩いて行って口吻（proboscis）を伸ばして飲みます。</b> 不正解なら首をかしげて考え込みます。
+  </p>
 </div>
 
-<!-- 19-class MBON Drive -->
+<!-- 19-class MBON Relative Drive Meter -->
 <div class="panel">
   <h2>
     <span>19クラス MBON 相対ドライブ (和 0〜18)</span>
-    <small style="color:var(--dim);font-weight:normal">※ドライブが最も低いコンパートメントを答えとして判定</small>
+    <small style="color:var(--dim);font-weight:normal">※ドライブが最も低い区画がハエの答え</small>
   </h2>
   <div class="drive-grid" id="driveGrid"></div>
+  <p class="note" style="margin-top:10px">
+    各区画の MBON（キノコ体出力ニューロン）が受ける入力の強さ。学習によって正しい和のシナプス結合が弱まるため（LTD）、<b>最も入力の弱い（ドライブが低い）区画がハエの選択</b>になります。
+  </p>
+</div>
+
+<!-- Kenyon Cells Sparse Coding -->
+<div class="panel">
+  <h2>
+    <span>ケニヨン細胞の活動 (5,177 KC)</span>
+    <small id="kcCount" style="color:var(--dim);font-weight:normal">発火細胞: –</small>
+  </h2>
+  <canvas id="kc" width="720" height="260"></canvas>
+  <div class="kleg">
+    <span><i style="background:#232c36"></i>沈黙している KC</span>
+    <span><i style="background:#59b7ff"></i>この数字ペアで発火した KC (約10%)</span>
+  </div>
+  <p class="note">
+    FlyWire の細胞体位置（Soma XY座標）でプロットした 5,177 個のケニヨン細胞。2枚の数字（計288ピクセル）が 685 本の投射ニューロン（ALPN）を駆動し、キノコ体内部で疎な発火パターン（Fly Hash）として表現されます。
+  </p>
+</div>
+
+<!-- Scientific Findings & Comparison Table -->
+<div class="panel">
+  <h2><span>実験結果とベースライン比較</span></h2>
+  <table class="comp-table">
+    <thead>
+      <tr>
+        <th>モデル / アーキテクチャ</th>
+        <th>学習済みペア (Seen)</th>
+        <th>未学習ペア (Held-Out)</th>
+        <th>学習メカニズム</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>ランダム推定 (Chance)</td>
+        <td>5.26%</td>
+        <td>5.26%</td>
+        <td>一様ランダム</td>
+      </tr>
+      <tr>
+        <td>線形分類 (Ridge)</td>
+        <td>19.6%</td>
+        <td>0.0%</td>
+        <td>L2 正則化線形回帰</td>
+      </tr>
+      <tr class="highlight">
+        <td>🪰 ハエ脳キノコ体 (FlyBrain)</td>
+        <td>14.0%</td>
+        <td>1.67%</td>
+        <td>生物学的ヘブ可塑性 (LTD/LTP)</td>
+      </tr>
+      <tr>
+        <td>2層パーセプトロン (MLP)</td>
+        <td>70.6%</td>
+        <td>0.0%</td>
+        <td>逆誤差伝播法 (Backprop)</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="note" style="margin-top:12px">
+    <b>生物学的示唆</b>: ショウジョウバエのキノコ体は、未知の数字ペアに対して「足し算の抽象的な代数法則」を外挿するのではなく、<b>経験した刺激と報酬の連合記憶（大容量連想ルックアップテーブル）</b>として機能していることが検証されました。未学習ペアに対する汎化精度（1.67%）は MLP（0.0%）や線形分類（0.0%）と同様に偶然レベルにとどまります。
+  </p>
 </div>
 
 <nav class="links">
@@ -305,6 +676,6 @@
   <a href="https://github.com/uchidama/hae-addition" target="_blank" rel="noopener">GitHub (hae-addition)</a>
 </nav>
 
-<script type="module" src="./page.js?v=1"></script>
+<script type="module" src="./page.js?v=2"></script>
 </body>
 </html>

@@ -53,6 +53,7 @@ async function init() {
       type: 'ready',
       classes: R.labels.length,
       labels: R.labels,
+      kc: Array.from(R.KC),
       message: 'ハエ脳の準備が完了しました！',
     });
   } catch (err) {
@@ -82,26 +83,20 @@ self.onmessage = async (e) => {
 
   if (type === 'init') {
     await init();
-  } else if (type === 'sample_and_ask') {
-    if (!R || !testBank) return;
+  } else if (type === 'sample_pair') {
+    // Only sample pair images without running inference yet
+    if (!testBank) return;
     const sample = samplePair(payload?.leftDigit, payload?.rightDigit);
-    const seen = R.look(sample.imgL, sample.imgR);
-    const decision = R.decide(seen.drive);
-
     post({
-      type: 'answer',
-      mode: 'sample',
+      type: 'sampled',
       leftDigit: sample.leftDigit,
       rightDigit: sample.rightDigit,
       target: sample.target,
       imgL: Array.from(sample.imgL),
       imgR: Array.from(sample.imgR),
-      predictedSum: decision.answer,
-      isCorrect: decision.answer === sample.target,
-      margin: decision.margin,
-      drive: Array.from(seen.drive),
     });
-  } else if (type === 'ask') {
+  } else if (type === 'ask_pair') {
+    // Run mushroom body addition inference
     if (!R) return;
     const imgL = new Float32Array(payload.imgL);
     const imgR = new Float32Array(payload.imgR);
@@ -110,12 +105,16 @@ self.onmessage = async (e) => {
 
     post({
       type: 'answer',
-      mode: 'custom',
-      imgL: payload.imgL,
-      imgR: payload.imgR,
+      mode: payload.mode || 'sample',
+      leftDigit: payload.leftDigit,
+      rightDigit: payload.rightDigit,
+      target: payload.target,
       predictedSum: decision.answer,
+      secondSum: decision.second,
+      isCorrect: payload.target != null ? decision.answer === payload.target : null,
       margin: decision.margin,
       drive: Array.from(seen.drive),
+      slots: Array.from(seen.slots),
     });
   }
 };
