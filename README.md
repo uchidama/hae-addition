@@ -59,11 +59,12 @@ See [docs/architecture.md](docs/architecture.md) for detailed data flow, network
 To evaluate the learned weights (`brain-110217.bin.gz`) against the standard (450 samples) and full (9,020 samples) MNIST test sets:
 
 ```sh
-node scripts/eval_mnist_baseline.mjs
-python scripts/plot_mnist_baseline.py
+node scripts/serve.mjs  # opens http://localhost:3000/tashizan/
 ```
 
-Results are saved to `results/mnist_baseline/`.
+- **http://localhost:3000/tashizan/** — 【NEW】足し算デモ (0〜9 + 0〜9 → 0〜18)
+- **http://localhost:3000/suji/** — 既存数字1〜9デモ
+- **http://localhost:3000/** — 既存ひらがなデモ
 
 ### Verifying Scratch Training
 
