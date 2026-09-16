@@ -79,42 +79,50 @@ function samplePair(leftDigit = null, rightDigit = null) {
 }
 
 self.onmessage = async (e) => {
-  const { type, payload } = e.data;
+  try {
+    const data = e.data || {};
+    const type = data.type;
+    const p = data.payload || data;
 
-  if (type === 'init') {
-    await init();
-  } else if (type === 'sample_pair') {
-    // Only sample pair images without running inference yet
-    if (!testBank) return;
-    const sample = samplePair(payload?.leftDigit, payload?.rightDigit);
-    post({
-      type: 'sampled',
-      leftDigit: sample.leftDigit,
-      rightDigit: sample.rightDigit,
-      target: sample.target,
-      imgL: Array.from(sample.imgL),
-      imgR: Array.from(sample.imgR),
-    });
-  } else if (type === 'ask_pair') {
-    // Run mushroom body addition inference
-    if (!R) return;
-    const imgL = new Float32Array(payload.imgL);
-    const imgR = new Float32Array(payload.imgR);
-    const seen = R.look(imgL, imgR);
-    const decision = R.decide(seen.drive);
+    if (type === 'init') {
+      await init();
+    } else if (type === 'sample_pair') {
+      if (!testBank) return;
+      const sample = samplePair(p.leftDigit, p.rightDigit);
+      post({
+        type: 'sampled',
+        leftDigit: sample.leftDigit,
+        rightDigit: sample.rightDigit,
+        target: sample.target,
+        imgL: Array.from(sample.imgL),
+        imgR: Array.from(sample.imgR),
+      });
+    } else if (type === 'ask_pair') {
+      if (!R) return;
+      const rawL = p.imgL;
+      const rawR = p.imgR;
+      if (!rawL || !rawR) throw new Error('Missing imgL or imgR in ask_pair');
+      const imgL = new Float32Array(rawL);
+      const imgR = new Float32Array(rawR);
+      const seen = R.look(imgL, imgR);
+      const decision = R.decide(seen.drive);
 
-    post({
-      type: 'answer',
-      mode: payload.mode || 'sample',
-      leftDigit: payload.leftDigit,
-      rightDigit: payload.rightDigit,
-      target: payload.target,
-      predictedSum: decision.answer,
-      secondSum: decision.second,
-      isCorrect: payload.target != null ? decision.answer === payload.target : null,
-      margin: decision.margin,
-      drive: Array.from(seen.drive),
-      slots: Array.from(seen.slots),
-    });
+      post({
+        type: 'answer',
+        mode: p.mode || 'sample',
+        leftDigit: p.leftDigit,
+        rightDigit: p.rightDigit,
+        target: p.target,
+        predictedSum: decision.answer,
+        secondSum: decision.second,
+        isCorrect: p.target != null ? decision.answer === p.target : null,
+        margin: decision.margin,
+        drive: Array.from(seen.drive),
+        slots: Array.from(seen.slots),
+      });
+    }
+  } catch (err) {
+    console.error('Worker error:', err);
+    post({ type: 'error', message: err.message });
   }
 };

@@ -448,7 +448,7 @@ function runWritingChoreography(data) {
     statusEl.textContent = `🪰 ハエが2つ目の数字「${data.rightDigit}」を地面に書いています…`;
 
     if (fly) {
-      fly.show(String(data.rightDigit), 1.0, false, true, () => {
+      fly.show(String(data.rightDigit), 1.0, false, false, () => {
         // Done writing digit B!
         cardB.classList.remove('writing');
         setTimeout(step3, 350);
@@ -461,14 +461,18 @@ function runWritingChoreography(data) {
   // Step 3: Mushroom body addition inference
   function step3() {
     statusEl.textContent = `🧠 キノコ体が足し算を計算中 (${data.leftDigit} + ${data.rightDigit} = ?)…`;
-    worker.postMessage({
-      type: 'ask_pair',
+    const payload = {
       imgL: data.imgL,
       imgR: data.imgR,
       leftDigit: data.leftDigit,
       rightDigit: data.rightDigit,
       target: data.target,
       mode: 'sample',
+    };
+    worker.postMessage({
+      type: 'ask_pair',
+      payload,
+      ...payload,
     });
   }
 }
@@ -510,6 +514,7 @@ function revealAnswer(m) {
 
   // 3D Fly Flag & Feeding Behavior
   if (fly) {
+    fly.hold = false;
     fly.reward = !!isCorrect;
     fly.setDigit(predictedSum, Math.min(1, margin / 0.03));
     fly.raiseFlag();
