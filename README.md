@@ -1,3 +1,15 @@
+# hae-addition: Arithmetic Learning with a Fruit-Fly Brain Model
+
+Fork of [satorunet/hae](https://github.com/satorunet/hae) for experiments on arithmetic learning using the *Drosophila* mushroom-body model.
+
+## Project Goals
+
+1. **Reproduce existing MNIST digit recognition**: Verify and baseline the original fruit-fly brain model on MNIST digits.
+2. **Train single-digit addition (0–9 + 0–9)**: Train the mushroom-body model to classify sums (0–18, 19 classes) from pairs of MNIST images.
+3. **Evaluate generalization to unseen pairs**: Test whether the model generalizes to held-out operand pairs (e.g. training on 80 pairs, testing on 20 unseen pairs) and test commutativity (e.g., $A + B = B + A$).
+
+---
+
 # hae.satoru.net — a fruit-fly brain that learns to read and write
 
 The site at **https://hae.satoru.net/**: the whole *Drosophila* brain model of
@@ -37,6 +49,29 @@ It is a static site (nginx) plus three small Node processes (pm2).
   brain, loaded with the server's gains), `suji/flag.js` (the 3D fly: writing by IK,
   waiting, eating through a proboscis tube, flying), `juku/api.mjs` (the
   handwriting record).
+
+## Architecture & Reproduction (hae-addition)
+
+See [docs/architecture.md](docs/architecture.md) for detailed data flow, network parameters, and plasticity rules.
+
+### Running MNIST Baseline Evaluation
+
+To evaluate the learned weights (`brain-110217.bin.gz`) against the standard (450 samples) and full (9,020 samples) MNIST test sets:
+
+```sh
+node scripts/eval_mnist_baseline.mjs
+python scripts/plot_mnist_baseline.py
+```
+
+Results are saved to `results/mnist_baseline/`.
+
+### Verifying Scratch Training
+
+To verify that the mushroom body learning pipeline runs from scratch:
+
+```sh
+node scripts/reproduce_mnist_train.mjs --steps 1000 --eval-every 200
+```
 
 ## Running it
 
