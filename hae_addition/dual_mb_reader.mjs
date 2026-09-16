@@ -77,15 +77,18 @@ export async function makeDualMBReader(opts = {}) {
    * Run the end-to-end Dual-Mushroom Body addition inference.
    * @param {Float32Array} imgL - Left digit image (144 pixels)
    * @param {Float32Array} imgR - Right digit image (144 pixels)
+   * @param {object} [opts]
+   * @param {(r: object, t: number) => void} [opts.onChunkL]
+   * @param {(r: object, t: number) => void} [opts.onChunkR]
    */
-  function lookAndAdd(imgL, imgR) {
+  function lookAndAdd(imgL, imgR, { onChunkL, onChunkR } = {}) {
     // Step 1: MB1 recognizes Digit A
-    const seenL = mb1.look(imgL);
+    const seenL = mb1.look(imgL, { onChunk: onChunkL });
     const decL = mb1.decide(seenL.drive);
     const digitA = decL.answer;
 
     // Step 2: MB1 recognizes Digit B
-    const seenR = mb1.look(imgR);
+    const seenR = mb1.look(imgR, { onChunk: onChunkR });
     const decR = mb1.decide(seenR.drive);
     const digitB = decR.answer;
 

@@ -4,31 +4,64 @@
 // Stage 2 (MB2): Associative Addition Mushroom Body (A, B -> A+B sum, 100% converged)
 
 import { FlyBrain } from '../flybrain/flybrain.js?v=7';
-import { makeDualMBReader } from '../hae_addition/dual_mb_reader.mjs?v=2';
+import { makeDualMBReader } from '../hae_addition/dual_mb_reader.mjs?v=3';
 
 const HERE = new URL('./', import.meta.url);
-const post = (msg) => self.postMessage(msg);
+const post = (msg, transfer = []) => self.postMessage(msg, transfer);
 
 let R = null;
 let testBank = null;
+
+// Live brain simulation state
+let kind = null;
+let kcSlot = null;
+let live = false;
+let liveTimer = null;
+let working = false;
+
+// Descending motor neurons (DNg11, DNg12) driving front leg writing
+let motorIdx = [];
+let motorDrive = 0;
 
 async function gunzipBytes(res) {
   const s = res.body.pipeThrough(new DecompressionStream('gzip'));
   return new Uint8Array(await new Response(s).arrayBuffer());
 }
 
+function summarise(r) {
+  let pn = 0, kc = 0, mb = 0, dn = 0;
+  const slots = [];
+  for (const i of r.idx) {
+    const k = kind[i];
+    if (k === 1) pn++;
+    else if (k === 2) { kc++; slots.push(kcSlot[i]); }
+    else if (k === 3) mb++;
+    else if (k === 4) dn++;
+  }
+  return { pn, kc, mb, dn, slots: Uint16Array.from(slots) };
+}
+
+function tick() {
+  liveTimer = null;
+  if (!live || working || !R) return;
+  const hz = motorDrive > 0.01 ? 30 + 220 * motorDrive : 0;
+  const f = summarise(R.mb1.idle(R.mb1.CHUNK_MS, 20, { idx: motorIdx, hz }));
+  post({ type: 'tick', ...f }, [f.slots.buffer]);
+  liveTimer = setTimeout(tick, 100);
+}
+
 async function init() {
   try {
     post({ type: 'progress', phase: 'downloading_brain', message: 'ハエ脳モデル (WASM/Connectome) を読み込み中...' });
 
-    let mb1Url = new URL('../results/mb1_digits/brain-mb1-final.bin.gz', HERE);
+    let mb1Url = new URL('../results/mb1_digits/brain-mb1-final.bin.gz?v=5', HERE);
     try {
       const chk = await fetch(mb1Url, { method: 'HEAD' });
       if (!chk.ok) {
-        mb1Url = new URL('../results/mb1_digits/brain-mb1-1500.bin.gz', HERE);
+        mb1Url = new URL('../results/mb1_digits/brain-mb1-10000.bin.gz', HERE);
       }
     } catch {
-      mb1Url = new URL('../results/mb1_digits/brain-mb1-1500.bin.gz', HERE);
+      mb1Url = new URL('../results/mb1_digits/brain-mb1-10000.bin.gz', HERE);
     }
 
     R = await makeDualMBReader({
@@ -57,13 +90,36 @@ async function init() {
       getImage: (idx) => Float32Array.from(mnistBuf.subarray(idx * rec + 1, (idx + 1) * rec), (v) => v / 255),
     };
 
+    // Index neuron kinds for live brain monitoring
+    kind = new Uint8Array(R.mb1.brain.n);
+    kcSlot = new Int32Array(R.mb1.brain.n).fill(-1);
+    for (const i of R.mb1.ALPN) kind[i] = 1;
+    R.mb1.KC.forEach((i, k) => { kind[i] = 2; kcSlot[i] = k; });
+    for (const i of R.mb1.MBON) kind[i] = 3;
+
+    try {
+      const groupsRes = await fetch(new URL('../flybrain/data/groups783.json?v=7', HERE));
+      const groups = (await groupsRes.json()).groups;
+      motorIdx = Object.keys(groups).filter((k) => /^dn:DNg(11|12(_[a-e])?):[LR]$/.test(k)).flatMap((k) => groups[k].idx);
+      for (const i of motorIdx) kind[i] = 4;
+    } catch { /* no motor row then */ }
+
     post({
       type: 'ready',
       classes: 19,
       labels: Array.from({ length: 19 }, (_, i) => String(i)),
       kc: Array.from(R.mb1.KC),
+      cells: {
+        pn: R.mb1.ALPN.length,
+        kc: R.mb1.KC.length,
+        mbon: R.mb1.MBON.length,
+        dn: motorIdx.length,
+      },
+      chunkMs: R.mb1.CHUNK_MS,
       message: '2段キノコ体モデル（視覚認識 MB1 + 連想記憶 MB2）の準備が完了しました！',
     });
+
+    if (live && !liveTimer) liveTimer = setTimeout(tick, 50);
   } catch (err) {
     post({ type: 'error', message: err.message });
   }
@@ -92,6 +148,17 @@ self.onmessage = async (e) => {
     const type = data.type;
     const p = data.payload || data;
 
+    if (type === 'motor') {
+      motorDrive = Math.max(0, Math.min(1, +p.drive || 0));
+      return;
+    }
+
+    if (type === 'live') {
+      live = !!p.on;
+      if (live && !liveTimer && R) liveTimer = setTimeout(tick, 50);
+      return;
+    }
+
     if (type === 'init') {
       await init();
     } else if (type === 'sample_pair') {
@@ -109,9 +176,14 @@ self.onmessage = async (e) => {
       if (!R) return;
       const raw = p.img;
       if (!raw) return;
+      working = true;
       const img = new Float32Array(raw);
-      const seen = R.mb1.look(img);
+      const frames = [];
+      const seen = R.mb1.look(img, { onChunk: (r) => frames.push(summarise(r)) });
       const dec = R.mb1.decide(seen.drive);
+      working = false;
+      if (live && !liveTimer && R) liveTimer = setTimeout(tick, 100);
+
       post({
         type: 'answer_single',
         which: p.which,
@@ -119,16 +191,27 @@ self.onmessage = async (e) => {
         margin: dec.margin,
         drive: Array.from(seen.drive),
         slots: Array.from(seen.slots),
+        frames,
       });
     } else if (type === 'ask_pair') {
       if (!R) return;
       const rawL = p.imgL;
       const rawR = p.imgR;
       if (!rawL || !rawR) throw new Error('Missing imgL or imgR in ask_pair');
+
+      working = true;
       const imgL = new Float32Array(rawL);
       const imgR = new Float32Array(rawR);
+      const framesL = [];
+      const framesR = [];
 
-      const res = R.lookAndAdd(imgL, imgR);
+      const res = R.lookAndAdd(imgL, imgR, {
+        onChunkL: (r) => framesL.push(summarise(r)),
+        onChunkR: (r) => framesR.push(summarise(r)),
+      });
+
+      working = false;
+      if (live && !liveTimer && R) liveTimer = setTimeout(tick, 100);
 
       post({
         type: 'answer',
@@ -145,12 +228,15 @@ self.onmessage = async (e) => {
         marginA: res.marginA,
         marginB: res.marginB,
         drive: res.driveSum,
-        slots: res.slotsA,
+        slots: res.slotsSum,
         slotsA: res.slotsA,
         slotsB: res.slotsB,
+        framesL,
+        framesR,
       });
     }
   } catch (err) {
+    working = false;
     console.error('Worker error:', err);
     post({ type: 'error', message: err.message });
   }

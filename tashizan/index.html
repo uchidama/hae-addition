@@ -98,6 +98,119 @@
   }
   .soundbtn:hover { background: rgba(28, 36, 46, 0.9); }
 
+  .brainbtn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 0.8rem;
+    padding: 6px 11px;
+    border-radius: 8px;
+    border: 1px solid #2e3b48;
+    color: var(--ink);
+    background: rgba(13, 16, 20, 0.78);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    cursor: pointer;
+    z-index: 6;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .brainbtn:hover { background: rgba(28, 36, 46, 0.9); }
+  .brainbtn[aria-pressed="true"] { border-color: #3a9be6; color: #d4ecff; }
+
+  /* Floating Brain Window */
+  .bwin {
+    position: fixed;
+    z-index: 50;
+    width: min(300px, calc(100vw - 16px));
+    background: rgba(10, 13, 17, 0.94);
+    border: 1px solid #33404d;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+    font-size: 0.68rem;
+    line-height: 1.35;
+    color: #9fb0c0;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+  .bwin[hidden] { display: none; }
+  .bwin.dragging { opacity: 0.92; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.65); }
+  .bwhead {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 6px 6px 10px;
+    cursor: move;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    border-bottom: 1px solid #222b34;
+    background: #131920;
+    border-radius: 9px 9px 0 0;
+  }
+  .bwtitle { font-weight: 600; color: #dbe5ee; font-size: 0.75rem; margin-right: auto; }
+  .bwmode {
+    flex: 1;
+    font-size: 0.64rem;
+    padding: 1px 6px;
+    border-radius: 9px;
+    background: #1c242c;
+    color: #9fb0c0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+  }
+  .bwmode.ask, .bwmode.read, .bwmode.readA, .bwmode.readB, .bwmode.calc { background: #3a2a14; color: #ffcf8a; }
+  .bwmode.write, .bwmode.writeA, .bwmode.writeB { background: #15301f; color: #bff0d2; }
+  .bwclose {
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: transparent;
+    border-color: transparent;
+    color: #c3cfdb;
+    cursor: pointer;
+  }
+  .bwclose:hover { background: #222b34; }
+  .bwbody { padding: 8px; }
+  #kcmini { display: block; width: 100%; height: auto; border-radius: 4px; background: #070a0d; }
+  .bwrow { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+  .bwrow span { width: 6.2em; white-space: nowrap; color: #8a97a6; }
+  .bwrow canvas { flex: 1; height: 22px; min-width: 0; background: #0b0f13; border-radius: 3px; }
+  .bwrow em { font-style: normal; width: 3.8em; text-align: right; font-variant-numeric: tabular-nums; color: #c3cfdb; }
+  .bpline { margin: 6px 0 3px; }
+  .bpline b { color: #d4ecff; font-weight: 600; }
+  .bprow { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+  .bprow b { width: 2.4em; color: #e6edf3; font-size: 0.78rem; text-align: left; font-weight: 600; }
+  .bpbar { flex: 1; height: 6px; border-radius: 3px; background: #1f272f; overflow: hidden; }
+  .bpbar i { display: block; height: 100%; border-radius: 3px; background: #3b4a5a; }
+  .bpbar i.win { background: #59b7ff; }
+  .bprow em { font-style: normal; width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; color: #7d8a99; }
+  .bwnote { margin-top: 7px; color: #6b7887; font-size: 0.6rem; line-height: 1.4; }
+
+  /* Compact Mode */
+  .bwin.compact { width: 160px; }
+  .bwin.compact .bwbody { padding: 5px 6px; display: flex; flex-wrap: wrap; column-gap: 8px; }
+  .bwin.compact #kcmini { flex: 0 0 100%; }
+  .bwin.compact .bwrow, .bwin.compact .bwnote, .bwin.compact .bpline, .bwin.compact #bpbars, .bwin.compact .bwmode { display: none; }
+  .bwstate { display: none; }
+  .bwin.compact .bwstate {
+    display: block;
+    flex: 0 0 100%;
+    margin-top: 4px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 0.64rem;
+    background: #1c242c;
+    color: #9fb0c0;
+  }
+  .bwin.compact .bwstate.ask, .bwin.compact .bwstate.readA, .bwin.compact .bwstate.readB, .bwin.compact .bwstate.calc { background: #3a2a14; color: #ffcf8a; }
+  .bwin.compact .bwstate.write, .bwin.compact .bwstate.writeA, .bwin.compact .bwstate.writeB { background: #15301f; color: #bff0d2; }
+  .bwin.compact .bwstate.eat { background: #33291a; color: #f2d49a; }
+  .bwin.compact .bwstate.fly { background: #172838; color: #bfe0ff; }
+
   .loadbar {
     position: absolute;
     left: 50%;
@@ -192,6 +305,10 @@
     border-color: var(--accent);
     box-shadow: 0 0 12px rgba(89, 183, 255, 0.35);
   }
+  .operand-card.reading .qdraw {
+    border-color: var(--warn);
+    box-shadow: 0 0 14px rgba(255, 180, 84, 0.45);
+  }
   .operand-card canvas.drawpad {
     position: absolute;
     inset: 0;
@@ -229,6 +346,28 @@
     gap: 6px;
   }
   .card-label b { color: #e6edf3; font-size: 0.95rem; }
+
+  .recog-label {
+    font-size: 0.72rem;
+    color: #8a97a6;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: -2px;
+  }
+  .recog-label b {
+    color: #ffcf8a;
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+  .recog-label.known b {
+    color: #59b7ff;
+  }
+  .recog-label.reading b {
+    color: #ffb454;
+    animation: recogpulse 0.7s infinite alternate;
+  }
+  @keyframes recogpulse { from { opacity: 0.45; } to { opacity: 1; } }
 
   .opsign {
     font-size: 2.2rem;
@@ -279,7 +418,9 @@
   .verdict-mark.ok { color: var(--ok); }
   .verdict-mark.no { color: var(--wrong); }
   .result-sub {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
+    line-height: 1.25;
+    text-align: center;
     color: var(--dim);
     margin-top: 4px;
     font-variant-numeric: tabular-nums;
@@ -510,6 +651,19 @@
     .result-box { width: 106px; height: 106px; }
     .predicted-sum { font-size: 2.8rem; }
     .opsign { font-size: 1.8rem; }
+    .brainbtn { top: 8px; right: 8px; padding: 5px 9px; font-size: 0.76rem; }
+    .bwin { width: min(50vw, 210px); font-size: 0.6rem; }
+    .bwin.compact { width: 140px; }
+    .bwhead { padding: 3px 3px 3px 7px; }
+    .bwtitle { font-size: 0.66rem; }
+    .bwmode { font-size: 0.58rem; }
+    .bwclose { padding: 2px 7px; }
+    .bwbody { padding: 5px 6px 6px; }
+    .bwnote, .bpline, #bpbars { display: none; }
+    .bwrow { margin-top: 1px; }
+    .bwrow span { width: 4.9em; }
+    .bwrow em { width: 3.1em; }
+    .bwrow canvas { height: 14px; }
   }
 </style>
 </head>
@@ -532,6 +686,7 @@
     <canvas id="fly"></canvas>
     <div id="stagechip" class="stagechip"><b>足し算テスト 正答率 80%</b><small>2段キノコ体 (MB1+MB2)</small></div>
     <button id="soundbtn" class="soundbtn" aria-label="音声のオン/オフ" aria-pressed="true">🔊</button>
+    <button id="brainbtn" class="brainbtn" aria-pressed="true">🧠 脳</button>
     <div id="loadbar" class="loadbar">
       <span id="loadText">脳モデルを読み込み中…</span>
       <div class="lbtrack"><i id="lbFill"></i></div>
@@ -550,6 +705,7 @@
         <canvas id="prevLeft" width="12" height="12" style="display:none"></canvas>
       </div>
       <div class="card-label">数字 A: <b id="labelA">–</b></div>
+      <div class="recog-label">ハエの認識: <b id="recogA">?</b></div>
     </div>
 
     <div class="opsign">+</div>
@@ -562,6 +718,7 @@
         <canvas id="prevRight" width="12" height="12" style="display:none"></canvas>
       </div>
       <div class="card-label">数字 B: <b id="labelB">–</b></div>
+      <div class="recog-label">ハエの認識: <b id="recogB">?</b></div>
     </div>
 
     <div class="opsign">=</div>
@@ -676,12 +833,27 @@
   </p>
 </div>
 
+<div id="brainwin" class="bwin">
+  <div class="bwhead" id="bwhead"><span class="bwtitle">🧠 脳の活動</span><span id="bwmode" class="bwmode">ふだん（背景入力だけ）</span><button id="bwmin" class="bwclose" aria-label="コンパクト表示の切り替え">－</button><button id="bwclose" class="bwclose" aria-label="閉じる">×</button></div>
+  <div class="bwbody">
+    <canvas id="kcmini"></canvas>
+    <div id="bwstate" class="bwstate idle">通常</div>
+    <div class="bwrow"><span>投射 PN</span><canvas id="sp-pn"></canvas><em id="hz-pn">–</em></div>
+    <div class="bwrow"><span>ケニヨン KC</span><canvas id="sp-kc"></canvas><em id="hz-kc">–</em></div>
+    <div class="bwrow"><span>出力 MBON</span><canvas id="sp-mb"></canvas><em id="hz-mb">–</em></div>
+    <div class="bwrow"><span>運動 DN</span><canvas id="sp-dn"></canvas><em id="hz-dn">–</em></div>
+    <div class="bpline">最後に計算した足し算: KC <b id="kcminipct">–</b> が発火。和の区画 (MB2):</div>
+    <div id="bpbars"></div>
+    <div class="bwnote">キノコ体の計算を約 1/3〜1/4 倍速で表示（1 本の縦線 = 25 ms）。ふだんは投射ニューロン全部に弱いランダム入力（20 Hz）が入っているだけで、ケニヨン細胞はほとんど黙っている。オレンジの帯が数字を見ている時間、緑の帯が数字を地面に書いている時間 — 書いている間は前脚を動かす下行性ニューロン（DNg11・DNg12）を筆の動きに合わせて駆動している。タイトルバーをつかんで動かせる。</div>
+  </div>
+</div>
+
 <nav class="links">
   <a href="/suji/">👈 数字1〜9の読み書きデモ</a>
   <a href="/">👈 ひらがな46文字デモ</a>
   <a href="https://github.com/uchidama/hae-addition" target="_blank" rel="noopener">GitHub (hae-addition)</a>
 </nav>
 
-<script type="module" src="./page.js?v=4"></script>
+<script type="module" src="./page.js?v=7"></script>
 </body>
 </html>
