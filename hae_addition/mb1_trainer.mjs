@@ -7,21 +7,35 @@ import * as K from '../hiragana/kana.mjs';
 // Parse arguments
 const args = process.argv.slice(2);
 let maxSteps = 3000;
-let evalEvery = 500;
+let evalEvery = 1000;
+let resumeFile = null;
+let startStep = 0;
+let outDirRel = 'results/mb1_digits/';
+
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--steps' && args[i + 1]) maxSteps = parseInt(args[++i], 10);
   if (args[i] === '--eval-every' && args[i + 1]) evalEvery = parseInt(args[++i], 10);
+  if (args[i] === '--resume' && args[i + 1]) resumeFile = args[++i];
+  if (args[i] === '--start-step' && args[i + 1]) startStep = parseInt(args[++i], 10);
+  if (args[i] === '--out-dir' && args[i + 1]) outDirRel = args[++i];
 }
 
 const ROOT = new URL('../', import.meta.url);
-const OUT_DIR = new URL('results/mb1_digits/', ROOT);
+const OUT_DIR = new URL(outDirRel, ROOT);
 await mkdir(OUT_DIR, { recursive: true });
 
 console.log(`=== Training MB1 (10-Class Single-Digit Recognizer 0-9) ===`);
-console.log(`Target steps: ${maxSteps}, Eval every: ${evalEvery}`);
+console.log(`Target steps: ${maxSteps}, Eval every: ${evalEvery}, Output: ${outDirRel}`);
 
 const R = await makeReader({ FlyBrain, base: new URL('flybrain/', ROOT), course: 'suji10' });
 const NL = R.labels.length;
+
+if (resumeFile) {
+  console.log(`Resuming weights from ${resumeFile}...`);
+  const buf = gunzipSync(await readFile(new URL(resumeFile, ROOT)));
+  const gains = new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4);
+  R.importGains(gains);
+}
 
 // Load MNIST 0-9 data
 const load = async (f) => new Uint8Array(gunzipSync(await readFile(new URL('juku/data/' + f, ROOT))));
@@ -73,16 +87,16 @@ function evaluate(step) {
 }
 
 // Initial evaluation
-console.log('Evaluating initial naive brain (Step 0)...');
-const eval0 = evaluate(0);
-console.log(`Step 0: Test Acc = ${(eval0.accuracy * 100).toFixed(2)}% (${eval0.ok}/${eval0.total})`);
+console.log(`Evaluating starting brain (Step ${startStep})...`);
+const eval0 = evaluate(startStep);
+console.log(`Step ${startStep}: Test Acc = ${(eval0.accuracy * 100).toFixed(2)}% (${eval0.ok}/${eval0.total})`);
 
 const WINDOW = 200;
 const recent = [];
-const log = [{ step: 0, test_acc: eval0.accuracy, timestamp: Date.now() }];
+const log = [{ step: startStep, test_acc: eval0.accuracy, timestamp: Date.now() }];
 const tStart = Date.now();
 
-for (let step = 1; step <= maxSteps; step++) {
+for (let step = startStep + 1; step <= maxSteps; step++) {
   const idx = order[(step - 1) % nTrain];
   const truth = train[idx * rec];
   const image = img(train, idx);
@@ -95,7 +109,7 @@ for (let step = 1; step <= maxSteps; step++) {
     const t0 = Date.now();
     const ev = evaluate(step);
     const runAcc = recent.reduce((a, b) => a + b, 0) / recent.length;
-    const speed = (step / ((Date.now() - tStart) / 1000)).toFixed(1);
+    const speed = ((step - startStep) / Math.max(0.1, (Date.now() - tStart) / 1000)).toFixed(1);
 
     console.log(
       `Step ${step}/${maxSteps} (${(step / maxSteps * 100).toFixed(0)}%): ` +
@@ -125,4 +139,4 @@ const finalBuf = gzipSync(Buffer.from(finalWeights.buffer, finalWeights.byteOffs
 await writeFile(new URL('brain-mb1-final.bin.gz', OUT_DIR), finalBuf);
 await writeFile(new URL('training_log.json', OUT_DIR), JSON.stringify(log, null, 2));
 
-console.log(`Training complete! Final model saved to results/mb1_digits/brain-mb1-final.bin.gz`);
+console.log(`Training complete! Final model saved to ${outDirRel}brain-mb1-final.bin.gz`);
