@@ -1,0 +1,11 @@
+{"step":0,"test_acc":0.01,"run_acc":null,"timestamp":1789586453937}
+{"step":500,"test_acc":0.07,"run_acc":0.07,"timestamp":1789586577778}
+{"step":1000,"test_acc":0.09666666666666666,"run_acc":0.12,"timestamp":1789586702797}
+{"step":1500,"test_acc":0.11333333333333333,"run_acc":0.095,"timestamp":1789586828932}
+{"step":2000,"test_acc":0.10333333333333333,"run_acc":0.09,"timestamp":1789586955198}
+{"step":2500,"test_acc":0.09,"run_acc":0.08,"timestamp":1789587075841}
+{"step":3000,"test_acc":0.11,"run_acc":0.135,"timestamp":1789587196623}
+{"step":3500,"test_acc":0.10666666666666667,"run_acc":0.125,"timestamp":1789587317808}
+{"step":4000,"test_acc":0.1,"run_acc":0.15,"timestamp":1789587438650}
+{"step":4500,"test_acc":0.1,"run_acc":0.115,"timestamp":1789587559567}
+{"step":5000,"test_acc":0.14,"run_acc":0.125,"timestamp":1789587683460}
