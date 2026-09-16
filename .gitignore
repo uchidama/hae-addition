@@ -8,3 +8,7 @@ juku/state/*/*
 !juku/state/*/trainer.json
 !juku/state/hiragana/brain-100000.bin.gz
 !juku/state/suji/brain-110217.bin.gz
+
+# Raw dataset caches and scratch runs
+juku/data/.raw_*
+results/addition_test_run/
