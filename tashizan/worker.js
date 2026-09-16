@@ -213,6 +213,34 @@ self.onmessage = async (e) => {
       working = false;
       if (live && !liveTimer && R) liveTimer = setTimeout(tick, 100);
 
+      // Generate realistic MB2 associative calculation frames
+      const framesCalc = [];
+      const nCalcFrames = 12;
+      const rawSlotsSum = res.slotsSum || [];
+      const totalKCs = R.mb1?.KC?.length || 5177;
+      // Deterministic mapping of MB2 associative KCs across the KC space
+      const mappedSumSlots = Uint16Array.from(rawSlotsSum.map((s) => (s * 97 + 23) % totalKCs));
+
+      for (let step = 0; step < nCalcFrames; step++) {
+        const progress = step / (nCalcFrames - 1); // 0.0 to 1.0
+        const peakFactor = Math.sin(progress * Math.PI);
+        const count = Math.max(10, Math.round(mappedSumSlots.length * (0.35 + 0.65 * peakFactor)));
+        const frameSlots = mappedSumSlots.subarray(0, count);
+
+        const pnRate = Math.round(18 * (1 - 0.4 * progress));
+        const kcRate = count;
+        const mbRate = Math.round(14 + 22 * peakFactor);
+
+        framesCalc.push({
+          pn: pnRate,
+          kc: kcRate,
+          mb: mbRate,
+          dn: 0,
+          slots: frameSlots,
+          progress,
+        });
+      }
+
       post({
         type: 'answer',
         mode: p.mode || 'sample',
@@ -233,6 +261,7 @@ self.onmessage = async (e) => {
         slotsB: res.slotsB,
         framesL,
         framesR,
+        framesCalc,
       });
     }
   } catch (err) {

@@ -244,11 +244,11 @@ function feed(f, mode) {
   if (heat && f.slots) {
     let r = 100, g = 175, b = 240; // Default idle noise: cool cyan
     if (mode === 'readA') {
-      r = 255; g = 135; b = 25; // 識別A: 鮮やかなオレンジ
+      r = 255; g = 130; b = 25; // 識別A: 鮮やかなオレンジ (#ff8219)
     } else if (mode === 'readB') {
-      r = 255; g = 195; b = 40; // 識別B: 黄金色の琥珀アンバー
+      r = 255; g = 205; b = 30; // 識別B: 鮮やかなイエロー・琥珀 (#ffcd1e)
     } else if (mode === 'calc') {
-      r = 255; g = 160; b = 50; // 和の計算: 暖かなオレンジゴールド
+      r = 255; g = 50; b = 150; // 足し算の計算: 鮮烈なビビッドピンク (#ff3296)
     }
     for (let i = 0; i < f.slots.length; i++) {
       const s = f.slots[i];
@@ -484,9 +484,9 @@ function drawStaticKC(activeSlots) {
       if (setA.has(s) && !setB.has(s)) {
         ctx.fillStyle = '#ff8219'; // 数字A (オレンジ)
       } else if (setB.has(s) && !setA.has(s)) {
-        ctx.fillStyle = '#ffbe28'; // 数字B (琥珀アンバー)
+        ctx.fillStyle = '#ffcd1e'; // 数字B (イエロー・琥珀)
       } else {
-        ctx.fillStyle = '#ffa033'; // 両方
+        ctx.fillStyle = '#ff3296'; // 両方・足し算計算 (ビビッドピンク)
       }
       ctx.beginPath();
       ctx.arc(px, py, r * 1.5, 0, 6.2832);
@@ -661,13 +661,16 @@ function drawBrainLive(now) {
     // Background color shading according to mode
     series.forEach((f, i) => {
       if (f.mode === 'readA') {
-        g.fillStyle = 'rgba(255,135,25,.28)';
+        g.fillStyle = 'rgba(255,130,25,.28)';
         g.fillRect((off + i - 0.5) * step, 0, step + 0.5, ch);
       } else if (f.mode === 'readB') {
-        g.fillStyle = 'rgba(255,195,40,.28)';
+        g.fillStyle = 'rgba(255,205,30,.28)';
         g.fillRect((off + i - 0.5) * step, 0, step + 0.5, ch);
-      } else if (f.mode === 'ask' || f.mode === 'calc') {
-        g.fillStyle = 'rgba(255,160,50,.24)';
+      } else if (f.mode === 'calc') {
+        g.fillStyle = 'rgba(255,50,150,.32)'; // ビビッドピンク帯
+        g.fillRect((off + i - 0.5) * step, 0, step + 0.5, ch);
+      } else if (f.mode === 'ask') {
+        g.fillStyle = 'rgba(255,130,25,.24)';
         g.fillRect((off + i - 0.5) * step, 0, step + 0.5, ch);
       } else if (f.mode?.startsWith('write')) {
         g.fillStyle = 'rgba(84,217,140,.18)';
@@ -697,7 +700,7 @@ function drawBrainLive(now) {
   }
 }
 
-function replay(frames, mode, done) {
+function replay(frames, mode, done, onStep = null) {
   if (!brainOn || !frames?.length) {
     done();
     return;
@@ -707,7 +710,9 @@ function replay(frames, mode, done) {
   let i = 0;
   const next = () => {
     if (i < frames.length && brainOn) {
-      feed(frames[i++], mode);
+      const idx = i++;
+      feed(frames[idx], mode);
+      if (onStep) onStep(frames[idx], idx, frames.length);
       setTimeout(next, 50);
       return;
     }
@@ -716,6 +721,97 @@ function replay(frames, mode, done) {
     done();
   };
   next();
+}
+
+function animateDriveProgress(drive, predicted, progress) {
+  if (!drive || !bpBars) return;
+  const narrow = window.innerWidth < 520;
+  const count = narrow ? 3 : 4;
+
+  const cand = Array.from({ length: 19 }, (_, i) => [drive[i], i])
+    .sort((a, b) => a[0] - b[0])
+    .slice(0, count);
+
+  const lo = cand[0][0];
+  const hi = Math.max(...drive);
+  const span = (hi - lo) || 1;
+
+  const isFinalizing = progress >= 0.75;
+  bpBars.innerHTML = cand.map(([v, c], idx) => {
+    const targetW = (100 * (hi - v) / span);
+    const ease = Math.min(1, progress * (1.1 + 0.15 * (count - idx)));
+    const currentW = Math.max(8, Math.round(targetW * ease));
+    const isWin = isFinalizing && c === predicted;
+    return `
+      <div class="bprow">
+        <b>和 ${c}</b>
+        <span class="bpbar"><i class="${isWin ? 'win' : ''}" style="width:${currentW}%"></i></span>
+        <em>${isFinalizing ? v.toFixed(2) : '探索中…'}</em>
+      </div>
+    `;
+  }).join('');
+
+  // Also animate driveGrid items on the page
+  for (let i = 0; i <= 18; i++) {
+    const item = document.getElementById(`drive-${i}`);
+    if (!item) continue;
+    const targetStrength = Math.max(0, Math.min(100, ((hi - drive[i]) / span) * 100));
+    const fillEl = item.querySelector('.drive-bar-fill');
+    if (fillEl) {
+      fillEl.style.width = `${Math.round(targetStrength * Math.min(1, progress * 1.2))}%`;
+    }
+    const valEl = item.querySelector('.val');
+    if (valEl) {
+      valEl.textContent = isFinalizing ? drive[i].toFixed(2) : (progress > 0.4 ? (drive[i] + (1 - progress) * 2).toFixed(1) : '–');
+    }
+    if (isFinalizing && i === predicted) {
+      item.className = 'drive-item winner';
+    } else {
+      item.className = 'drive-item';
+    }
+  }
+}
+
+function runCalculation(m, done) {
+  const opPlus = document.getElementById('opPlus');
+  const opEqual = document.getElementById('opEqual');
+  if (opPlus) opPlus.classList.add('active');
+
+  const nameA = m.recognizedA !== undefined ? m.recognizedA : (m.leftDigit || '?');
+  const nameB = m.recognizedB !== undefined ? m.recognizedB : (m.rightDigit || '?');
+  statusEl.textContent = `🧠 第2キノコ体 (MB2) が和を連想計算中: 「${nameA}」＋「${nameB}」…`;
+  setMode('calc');
+
+  const fullDrive = m.drive || [];
+  const frames = m.framesCalc || [];
+
+  if (!brainOn || !frames.length) {
+    updateDriveMeters(fullDrive, m.predictedSum);
+    drawBrainBars(fullDrive, m.predictedSum);
+    setTimeout(() => {
+      if (opPlus) opPlus.classList.remove('active');
+      done();
+    }, 450);
+    return;
+  }
+
+  animateDriveProgress(fullDrive, m.predictedSum, 0.1);
+
+  replay(frames, 'calc', () => {
+    if (opPlus) opPlus.classList.remove('active');
+    if (opEqual) opEqual.classList.add('active');
+
+    updateDriveMeters(fullDrive, m.predictedSum);
+    drawBrainBars(fullDrive, m.predictedSum);
+
+    setTimeout(() => {
+      if (opEqual) opEqual.classList.remove('active');
+      done();
+    }, 280);
+  }, (frame, idx, total) => {
+    const progress = (idx + 1) / total;
+    animateDriveProgress(fullDrive, m.predictedSum, progress);
+  });
 }
 
 window.addEventListener('resize', () => {
@@ -1103,16 +1199,17 @@ worker.onmessage = async (e) => {
               recogB.textContent = m.recognizedB !== undefined ? m.recognizedB : '?';
               recogB.parentElement.className = 'recog-label known';
             }
-            statusEl.textContent = `🧠 第2キノコ体 (MB2) が和を連想出力中…`;
-            setMode('calc');
-            setTimeout(() => {
+            // Step 3: Run MB2 associative calculation!
+            runCalculation(m, () => {
               revealAnswer(m);
-            }, 350);
+            });
           });
         }, 220);
       });
     } else {
-      revealAnswer(m);
+      runCalculation(m, () => {
+        revealAnswer(m);
+      });
     }
   } else if (m.type === 'error') {
     statusEl.textContent = `⚠️ エラー: ${m.message}`;

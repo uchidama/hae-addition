@@ -160,7 +160,8 @@
     text-overflow: ellipsis;
     text-align: center;
   }
-  .bwmode.ask, .bwmode.read, .bwmode.readA, .bwmode.readB, .bwmode.calc { background: #3a2a14; color: #ffcf8a; }
+  .bwmode.ask, .bwmode.read, .bwmode.readA, .bwmode.readB { background: #3a2a14; color: #ffcf8a; }
+  .bwmode.calc { background: #3c1226; color: #ff80be; border-color: #6d1a42; }
   .bwmode.write, .bwmode.writeA, .bwmode.writeB { background: #15301f; color: #bff0d2; }
   .bwclose {
     font-size: 0.9rem;
@@ -206,7 +207,8 @@
     background: #1c242c;
     color: #9fb0c0;
   }
-  .bwin.compact .bwstate.ask, .bwin.compact .bwstate.readA, .bwin.compact .bwstate.readB, .bwin.compact .bwstate.calc { background: #3a2a14; color: #ffcf8a; }
+  .bwin.compact .bwstate.ask, .bwin.compact .bwstate.readA, .bwin.compact .bwstate.readB { background: #3a2a14; color: #ffcf8a; }
+  .bwin.compact .bwstate.calc { background: #3c1226; color: #ff80be; }
   .bwin.compact .bwstate.write, .bwin.compact .bwstate.writeA, .bwin.compact .bwstate.writeB { background: #15301f; color: #bff0d2; }
   .bwin.compact .bwstate.eat { background: #33291a; color: #f2d49a; }
   .bwin.compact .bwstate.fly { background: #172838; color: #bfe0ff; }
@@ -375,6 +377,12 @@
     color: var(--dim);
     line-height: 1;
     user-select: none;
+    transition: color 0.2s ease, text-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .opsign.active {
+    color: #ff3296;
+    text-shadow: 0 0 16px rgba(255, 50, 150, 0.95), 0 0 30px rgba(255, 50, 150, 0.55);
+    transform: scale(1.35);
   }
 
   /* Result Box */
@@ -708,7 +716,7 @@
       <div class="recog-label">ハエの認識: <b id="recogA">?</b></div>
     </div>
 
-    <div class="opsign">+</div>
+    <div class="opsign" id="opPlus">+</div>
 
     <!-- Operand B -->
     <div class="operand-card" id="cardB">
@@ -721,7 +729,7 @@
       <div class="recog-label">ハエの認識: <b id="recogB">?</b></div>
     </div>
 
-    <div class="opsign">=</div>
+    <div class="opsign" id="opEqual">=</div>
 
     <!-- Predicted Sum & Verdict -->
     <div class="result-box" id="resultBox">
@@ -777,11 +785,12 @@
   <div class="kleg">
     <span><i style="background:#232c36"></i>沈黙している KC</span>
     <span><i style="background:#ff8219"></i>数字Aの認識 (オレンジ)</span>
-    <span><i style="background:#ffbe28"></i>数字Bの認識 (琥珀アンバー)</span>
+    <span><i style="background:#ffcd1e"></i>数字Bの認識 (イエロー)</span>
+    <span><i style="background:#ff3296"></i>足し算の計算 (ピンク)</span>
     <span><i style="background:#6ebeff"></i>ふだんの微弱な自発発火 (青)</span>
   </div>
   <p class="note">
-    FlyWire の細胞体位置（Soma XY座標）でプロットした 5,177 個のケニヨン細胞。キノコ体（MB1）が数字A・Bを視覚認識・計算する際、該当するケニヨン細胞がオレンジや琥珀色に発火します。前脚で文字を書く運動や旗あげ運動のときはキノコ体は光らず、運動ニューロン（DN）が働きます。
+    FlyWire の細胞体位置（Soma XY座標）でプロットした 5,177 個のケニヨン細胞。キノコ体（MB1）が数字Aをオレンジ、数字Bをイエローで認識し、第2キノコ体（MB2）が鮮烈なピンク色で足し算の和を計算・連想出力します。前脚で文字を書く運動や旗あげ運動のときはキノコ体は光らず、運動ニューロン（DN）が働きます。
   </p>
 </div>
 
@@ -846,7 +855,7 @@
     <div class="bwrow"><span>運動 DN</span><canvas id="sp-dn"></canvas><em id="hz-dn">–</em></div>
     <div class="bpline">最後に計算した足し算: KC <b id="kcminipct">–</b> が発火。和の区画 (MB2):</div>
     <div id="bpbars"></div>
-    <div class="bwnote">キノコ体の計算を約 1/3〜1/4 倍速で表示（1 本の縦線 = 25 ms）。ふだんは投射ニューロン全部に弱いランダム入力（20 Hz）が入っているだけで、ケニヨン細胞はほとんど黙っている（青いかすかな自発発火）。オレンジと琥珀色の光が数字A・Bをキノコ体（MB1）で視覚認識している時間。緑の帯が数字を地面に書いている時間で、前脚を動かす下行性ニューロン（DNg11・DNg12）を筆の動きに合わせて駆動している。タイトルバーをつかんで動かせる。</div>
+    <div class="bwnote">キノコ体の計算を約 1/3〜1/4 倍速で表示（1 本の縦線 = 25 ms）。ふだんは投射ニューロン全部に弱いランダム入力（20 Hz）が入っているだけで、ケニヨン細胞はほとんど黙っている（青いかすかな自発発火）。オレンジ（A）とイエロー（B）の光が数字を認識している時間（MB1）。鮮やかなピンク色の帯と発光が足し算を計算している時間（MB2）。緑の帯が数字を地面に書いている時間で、前脚を動かす下行性ニューロン（DNg11・DNg12）を筆の動きに合わせて駆動している。タイトルバーをつかんで動かせる。</div>
   </div>
 </div>
 
@@ -856,6 +865,6 @@
   <a href="https://github.com/uchidama/hae-addition" target="_blank" rel="noopener">GitHub (hae-addition)</a>
 </nav>
 
-<script type="module" src="./page.js?v=8"></script>
+<script type="module" src="./page.js?v=10"></script>
 </body>
 </html>
