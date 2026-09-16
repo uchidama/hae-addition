@@ -1,0 +1,44 @@
+{
+  "experiment": "mnist_baseline",
+  "course": "suji",
+  "description": "Reproduction and evaluation of baseline Drosophila mushroom-body model on MNIST digits 1-9",
+  "model": {
+    "framework": "WebAssembly (C lif core) + Node.js ES Modules",
+    "core_file": "flybrain/src/brain.c",
+    "wasm_file": "flybrain/flybrain.wasm",
+    "connectome": "FlyWire v783 (138,639 neurons, 15,091,983 connections)",
+    "olfactory_projection_neurons_alpn": 685,
+    "mbon_count": 96,
+    "classes": 9,
+    "labels": ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+    "synapses_kc_to_mbon": 62261
+  },
+  "hyperparameters": {
+    "image_size": [12, 12],
+    "input_pixels": 144,
+    "ink_threshold": 0.05,
+    "input_frequency_hz": 220,
+    "look_duration_ms": 400,
+    "feedback_duration_ms": 300,
+    "learning_rate_eta": 6e-5,
+    "gain_min": 0.05,
+    "gain_max": 2.0,
+    "tau_trace_ms": 40,
+    "tau_dopa_ms": 1e7
+  },
+  "dataset": {
+    "source": "MNIST (downsampled to 12x12, digits 1-9 only)",
+    "train_samples": 54077,
+    "test_samples": 9020,
+    "standard_eval_samples": 450,
+    "train_file": "juku/data/mnist12_train.bin.gz",
+    "test_file": "juku/data/mnist12_test.bin.gz"
+  },
+  "environment": {
+    "os": "Windows 11",
+    "node_version": "v24.14.1",
+    "python_version": "3.12.10",
+    "gpu": "NVIDIA GeForce RTX 4060 Ti 16GB",
+    "gpu_utilization_in_flybrain": "None (WASM executes on CPU single-thread; Brian2 comparison is ~300x faster)"
+  }
+}

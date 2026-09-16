@@ -1,0 +1,55 @@
+================================================================================
+FlyBrain (Drosophila Mushroom Body) MNIST Digit Recognition Baseline Evaluation
+================================================================================
+
+Date: 2026-09-17
+Platform: Windows 11 (Node.js v24.14.1, Python 3.12.10)
+GPU: NVIDIA GeForce RTX 4060 Ti 16GB (Not utilized by WASM LIF core; single-threaded CPU)
+Model Weights: juku/state/suji/brain-110217.bin.gz (110,217 training steps)
+Target Classes: 9 digits ('1' to '9')
+
+1. Standard Benchmark Evaluation (450 samples: 50 per digit)
+--------------------------------------------------------------------------------
+Duration: 36,875 ms (~82 ms/sample)
+Overall Accuracy: 89.56% (403 / 450)
+Status: Exact match with official recorded status.json (test: 0.8956)
+
+Per-digit Accuracy:
+  Digit 1: 94.0% (47/50)
+  Digit 2: 80.0% (40/50)
+  Digit 3: 100.0% (50/50)
+  Digit 4: 84.0% (42/50)
+  Digit 5: 86.0% (43/50)
+  Digit 6: 96.0% (48/50)
+  Digit 7: 96.0% (48/50)
+  Digit 8: 96.0% (48/50)
+  Digit 9: 74.0% (37/50)
+
+2. Full Test Set Evaluation (9,020 samples)
+--------------------------------------------------------------------------------
+Duration: 785,414 ms (~785.4 s, ~87 ms/sample)
+Overall Accuracy: 89.83% (8,103 / 9,020)
+
+Per-digit Accuracy:
+  Digit 1: 94.10% (1068 / 1135)
+  Digit 2: 79.94% (825 / 1032)
+  Digit 3: 94.16% (951 / 1010)
+  Digit 4: 87.58% (860 / 982)
+  Digit 5: 86.66% (773 / 892)
+  Digit 6: 91.34% (875 / 958)
+  Digit 7: 91.63% (942 / 1028)
+  Digit 8: 95.69% (932 / 974)
+  Digit 9: 86.92% (877 / 1009)
+
+3. Learning Process Summary (from log.jsonl)
+--------------------------------------------------------------------------------
+Initial Performance: ~11% (Random guess baseline)
+At 2,000 steps: 72.0%
+At 6,000 steps: 81.1%
+At 20,000 steps: 85.3%
+At 50,000 steps: 87.8%
+At 88,000 steps: 90.2%
+At 110,217 steps: 89.56% (Convergence around 89-90%)
+Total Training Samples: 110,217 pictures
+Synapses Updated (KC -> MBON): 62,261
+Plasticity Rule: Error-driven dopamine (LTD on target group, LTP on chosen group)
