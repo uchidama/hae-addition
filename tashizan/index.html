@@ -684,7 +684,7 @@
   <!-- 3D Fly Stage (Left column on desktop) -->
   <div class="flywrap">
     <canvas id="fly"></canvas>
-    <div id="stagechip" class="stagechip"><b>足し算テスト 正答率 80%</b><small>2段キノコ体 (MB1+MB2)</small></div>
+    <div id="stagechip" class="stagechip"><b>足し算テスト 正答率 75%</b><small>2段キノコ体 10k steps</small></div>
     <button id="soundbtn" class="soundbtn" aria-label="音声のオン/オフ" aria-pressed="true">🔊</button>
     <button id="brainbtn" class="brainbtn" aria-pressed="true">🧠 脳</button>
     <div id="loadbar" class="loadbar">
@@ -776,10 +776,12 @@
   <canvas id="kc" width="720" height="260"></canvas>
   <div class="kleg">
     <span><i style="background:#232c36"></i>沈黙している KC</span>
-    <span><i style="background:#59b7ff"></i>この数字ペアで発火した KC (約10%)</span>
+    <span><i style="background:#ff8219"></i>数字Aの認識 (オレンジ)</span>
+    <span><i style="background:#ffbe28"></i>数字Bの認識 (琥珀アンバー)</span>
+    <span><i style="background:#6ebeff"></i>ふだんの微弱な自発発火 (青)</span>
   </div>
   <p class="note">
-    FlyWire の細胞体位置（Soma XY座標）でプロットした 5,177 個のケニヨン細胞。2枚の数字（計288ピクセル）が 685 本の投射ニューロン（ALPN）を駆動し、キノコ体内部で疎な発火パターン（Fly Hash）として表現されます。
+    FlyWire の細胞体位置（Soma XY座標）でプロットした 5,177 個のケニヨン細胞。キノコ体（MB1）が数字A・Bを視覚認識・計算する際、該当するケニヨン細胞がオレンジや琥珀色に発火します。前脚で文字を書く運動や旗あげ運動のときはキノコ体は光らず、運動ニューロン（DN）が働きます。
   </p>
 </div>
 
@@ -844,7 +846,7 @@
     <div class="bwrow"><span>運動 DN</span><canvas id="sp-dn"></canvas><em id="hz-dn">–</em></div>
     <div class="bpline">最後に計算した足し算: KC <b id="kcminipct">–</b> が発火。和の区画 (MB2):</div>
     <div id="bpbars"></div>
-    <div class="bwnote">キノコ体の計算を約 1/3〜1/4 倍速で表示（1 本の縦線 = 25 ms）。ふだんは投射ニューロン全部に弱いランダム入力（20 Hz）が入っているだけで、ケニヨン細胞はほとんど黙っている。オレンジの帯が数字を見ている時間、緑の帯が数字を地面に書いている時間 — 書いている間は前脚を動かす下行性ニューロン（DNg11・DNg12）を筆の動きに合わせて駆動している。タイトルバーをつかんで動かせる。</div>
+    <div class="bwnote">キノコ体の計算を約 1/3〜1/4 倍速で表示（1 本の縦線 = 25 ms）。ふだんは投射ニューロン全部に弱いランダム入力（20 Hz）が入っているだけで、ケニヨン細胞はほとんど黙っている（青いかすかな自発発火）。オレンジと琥珀色の光が数字A・Bをキノコ体（MB1）で視覚認識している時間。緑の帯が数字を地面に書いている時間で、前脚を動かす下行性ニューロン（DNg11・DNg12）を筆の動きに合わせて駆動している。タイトルバーをつかんで動かせる。</div>
   </div>
 </div>
 
@@ -854,6 +856,6 @@
   <a href="https://github.com/uchidama/hae-addition" target="_blank" rel="noopener">GitHub (hae-addition)</a>
 </nav>
 
-<script type="module" src="./page.js?v=7"></script>
+<script type="module" src="./page.js?v=8"></script>
 </body>
 </html>

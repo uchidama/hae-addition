@@ -77,6 +77,9 @@ try { brainOn = localStorage.getItem('hae-brain-open') !== '0'; } catch { /* no 
 const SERIES = 90;
 const series = [];
 let heat = null;
+let heatR = null;
+let heatG = null;
+let heatB = null;
 let heatT = 0;
 let rafOn = false;
 let replaying = false;
@@ -239,8 +242,22 @@ function feed(f, mode) {
   series.push({ pn: f.pn, kc: f.kc, mb: f.mb, dn: f.dn || 0, mode });
   if (series.length > SERIES) series.shift();
   if (heat && f.slots) {
+    let r = 100, g = 175, b = 240; // Default idle noise: cool cyan
+    if (mode === 'readA') {
+      r = 255; g = 135; b = 25; // 識別A: 鮮やかなオレンジ
+    } else if (mode === 'readB') {
+      r = 255; g = 195; b = 40; // 識別B: 黄金色の琥珀アンバー
+    } else if (mode === 'calc') {
+      r = 255; g = 160; b = 50; // 和の計算: 暖かなオレンジゴールド
+    }
     for (let i = 0; i < f.slots.length; i++) {
-      heat[f.slots[i]] = 1.0;
+      const s = f.slots[i];
+      heat[s] = 1.0;
+      if (heatR) {
+        heatR[s] = r;
+        heatG[s] = g;
+        heatB[s] = b;
+      }
     }
   }
 }
@@ -400,13 +417,22 @@ async function loadKCPositions(kcIdx) {
   }
 }
 
-function drawKC(activeSlots = null) {
+function drawKC(activeSlots = null, ignite = false) {
   if (!kcXY) return;
   const n = kcXY.length / 2;
-  if (!heat) heat = new Float32Array(n);
-  if (activeSlots) {
+  if (!heat) {
+    heat = new Float32Array(n);
+    heatR = new Uint8Array(n);
+    heatG = new Uint8Array(n);
+    heatB = new Uint8Array(n);
+  }
+  if (activeSlots && ignite) {
     for (let i = 0; i < activeSlots.length; i++) {
-      heat[activeSlots[i]] = 1.0;
+      const s = activeSlots[i];
+      heat[s] = 1.0;
+      if (heatR) {
+        heatR[s] = 255; heatG[s] = 150; heatB[s] = 30;
+      }
     }
   }
   const kcCountEl = document.getElementById('kcCount');
@@ -416,6 +442,56 @@ function drawKC(activeSlots = null) {
     const nB = lastSlotsB ? lastSlotsB.length : 0;
     const sub = (nA && nB) ? ` [A: ${nA}個, B: ${nB}個]` : '';
     kcCountEl.textContent = `発火細胞: 2文字計 ${total.toLocaleString()} 個 (${(100 * total / n).toFixed(1)}%)${sub}`;
+  }
+  if (!brainOn) {
+    drawStaticKC(activeSlots);
+  }
+}
+
+function drawStaticKC(activeSlots) {
+  const bigKc = document.getElementById('kc');
+  if (!bigKc || !kcXY) return;
+  const w = bigKc.clientWidth || 720, h = Math.round(w * 0.36);
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  if (bigKc.width !== w * dpr) {
+    bigKc.width = w * dpr;
+    bigKc.height = h * dpr;
+    bigKc.style.height = h + 'px';
+  }
+  const ctx = bigKc.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  const n = kcXY.length / 2;
+  const pad = 10, r = Math.max(0.7, Math.min(2.2, w / 420));
+  ctx.fillStyle = '#232c36';
+  ctx.beginPath();
+  for (let k = 0; k < n; k++) {
+    const px = pad + kcXY[2 * k] * (w - 2 * pad);
+    const py = pad + kcXY[2 * k + 1] * (h - 2 * pad);
+    ctx.moveTo(px + r, py);
+    ctx.arc(px, py, r, 0, 6.2832);
+  }
+  ctx.fill();
+
+  if (activeSlots && activeSlots.length) {
+    const setA = new Set(lastSlotsA || []);
+    const setB = new Set(lastSlotsB || []);
+    for (let i = 0; i < activeSlots.length; i++) {
+      const s = activeSlots[i];
+      const px = pad + kcXY[2 * s] * (w - 2 * pad);
+      const py = pad + kcXY[2 * s + 1] * (h - 2 * pad);
+      if (setA.has(s) && !setB.has(s)) {
+        ctx.fillStyle = '#ff8219'; // 数字A (オレンジ)
+      } else if (setB.has(s) && !setA.has(s)) {
+        ctx.fillStyle = '#ffbe28'; // 数字B (琥珀アンバー)
+      } else {
+        ctx.fillStyle = '#ffa033'; // 両方
+      }
+      ctx.beginPath();
+      ctx.arc(px, py, r * 1.5, 0, 6.2832);
+      ctx.fill();
+    }
   }
 }
 
@@ -461,7 +537,12 @@ function drawBrainLive(now) {
 
   if (!kcXY) return;
   const n = kcXY.length / 2;
-  if (!heat) heat = new Float32Array(n);
+  if (!heat) {
+    heat = new Float32Array(n);
+    heatR = new Uint8Array(n);
+    heatG = new Uint8Array(n);
+    heatB = new Uint8Array(n);
+  }
 
   const dt = Math.min(0.1, (now - (heatT || now)) / 1000);
   heatT = now;
@@ -495,14 +576,17 @@ function drawBrainLive(now) {
     }
     x.fill();
 
-    // Active glowing KCs
+    // Active glowing KCs (orange/amber for digits, cyan for idle noise)
     for (let k = 0; k < n; k++) {
       const v = heat[k];
       if (v < 0.03) continue;
       heat[k] = v * decay;
       const px = pad + kcXY[2 * k] * (w - 2 * pad);
       const py = pad + kcXY[2 * k + 1] * (h - 2 * pad);
-      x.fillStyle = `rgba(120,200,255,${v.toFixed(3)})`;
+      const red = heatR ? heatR[k] : 100;
+      const grn = heatG ? heatG[k] : 175;
+      const blu = heatB ? heatB[k] : 240;
+      x.fillStyle = `rgba(${red},${grn},${blu},${v.toFixed(3)})`;
       x.beginPath();
       x.arc(px, py, r * (1 + 1.2 * v), 0, 6.2832);
       x.fill();
@@ -538,7 +622,10 @@ function drawBrainLive(now) {
       if (v < 0.03) continue;
       const px = pad + kcXY[2 * k] * (w - 2 * pad);
       const py = pad + kcXY[2 * k + 1] * (h - 2 * pad);
-      ctx.fillStyle = `rgba(120,200,255,${v.toFixed(3)})`;
+      const red = heatR ? heatR[k] : 100;
+      const grn = heatG ? heatG[k] : 175;
+      const blu = heatB ? heatB[k] : 240;
+      ctx.fillStyle = `rgba(${red},${grn},${blu},${v.toFixed(3)})`;
       ctx.beginPath();
       ctx.arc(px, py, r * (1 + 1.3 * v), 0, 6.2832);
       ctx.fill();
@@ -573,8 +660,14 @@ function drawBrainLive(now) {
 
     // Background color shading according to mode
     series.forEach((f, i) => {
-      if (f.mode?.startsWith('read') || f.mode === 'ask' || f.mode === 'calc') {
-        g.fillStyle = 'rgba(201,122,31,.24)';
+      if (f.mode === 'readA') {
+        g.fillStyle = 'rgba(255,135,25,.28)';
+        g.fillRect((off + i - 0.5) * step, 0, step + 0.5, ch);
+      } else if (f.mode === 'readB') {
+        g.fillStyle = 'rgba(255,195,40,.28)';
+        g.fillRect((off + i - 0.5) * step, 0, step + 0.5, ch);
+      } else if (f.mode === 'ask' || f.mode === 'calc') {
+        g.fillStyle = 'rgba(255,160,50,.24)';
         g.fillRect((off + i - 0.5) * step, 0, step + 0.5, ch);
       } else if (f.mode?.startsWith('write')) {
         g.fillStyle = 'rgba(84,217,140,.18)';
@@ -758,7 +851,7 @@ function updateTally() {
   tallyFrac.textContent = asked ? `(${right}/${asked})` : '';
   tallySub.textContent = asked ? `このページで ${right} / ${asked} 問正解` : '出題を準備中…';
   histEl.innerHTML = hist.slice(-32).map((ok) => `<i class="${ok ? 'ok' : 'no'}"></i>`).join('');
-  stagechip.innerHTML = `<b>正答率 ${asked ? pct + '%' : '80%'}</b><small>2段キノコ体 (${asked}問)</small>`;
+  stagechip.innerHTML = `<b>正答率 ${asked ? pct + '%' : '75%'}</b><small>2段キノコ体 10k steps (${asked}問)</small>`;
 }
 
 // 8. Auto Mode Toggle
@@ -805,7 +898,7 @@ function nextQuestion(delay = 0, awaitFly = false) {
 function startIfReady() {
   if (isFlyReady && isWorkerReady) {
     busy = false;
-    statusEl.textContent = '準備完了。足し算の出題を開始します。';
+    statusEl.textContent = '準備完了。10,000ステップ学習済みのハエ脳（正答率 ~75%）で足し算を開始します。';
     setAuto(true);
   }
 }
@@ -1048,29 +1141,16 @@ btnSolve.addEventListener('click', () => {
 
   setAuto(false);
   busy = true;
-  statusEl.textContent = '手書きの数字をハエが読んでいます…';
-
-  // Fly writes / reads user's hand and judges
-  cardA.classList.add('writing');
-  setMode('writeA');
-  setTimeout(() => {
-    cardA.classList.remove('writing');
-    cardB.classList.add('writing');
-    setMode('writeB');
-    setTimeout(() => {
-      cardB.classList.remove('writing');
-      setMode('calc');
-      worker.postMessage({
-        type: 'ask_pair',
-        imgL: Array.from(imgL),
-        imgR: Array.from(imgR),
-        leftDigit: '✍',
-        rightDigit: '✍',
-        target: null,
-        mode: 'custom',
-      });
-    }, 500);
-  }, 500);
+  statusEl.textContent = '🧠 手書きの数字をハエのキノコ体が読み始めます…';
+  worker.postMessage({
+    type: 'ask_pair',
+    imgL: Array.from(imgL),
+    imgR: Array.from(imgR),
+    leftDigit: '✍',
+    rightDigit: '✍',
+    target: null,
+    mode: 'custom',
+  });
 });
 
 btnClear.addEventListener('click', () => {
@@ -1092,6 +1172,7 @@ btnClear.addEventListener('click', () => {
     item.querySelector('.drive-bar-fill').style.width = '0%';
   }
   if (bpBars) bpBars.innerHTML = '';
+  if (heat) heat.fill(0);
   drawKC(null);
   setMode('idle');
   statusEl.textContent = '消去しました。数字を描くか「ランダム出題」を押してください。';
