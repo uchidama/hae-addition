@@ -1,0 +1,22 @@
+{
+  "all_pairs": {
+    "Random": 0.0526,
+    "Linear": 0.196,
+    "MLP": 0.706,
+    "FlyBrain": 0.14
+  },
+  "held_out": {
+    "seen": {
+      "Random": 0.0526,
+      "Linear": 0.2975,
+      "MLP": 0.7875,
+      "FlyBrain": 0.18333333333333332
+    },
+    "unseen": {
+      "Random": 0.0526,
+      "Linear": 0.0,
+      "MLP": 0.0,
+      "FlyBrain": 0.016666666666666666
+    }
+  }
+}
