@@ -113,4 +113,87 @@ export class AdditionDataset {
     }
     return out;
   }
+
+  /**
+   * Split 100 pairs into seen (training) and unseen (held-out) sets.
+   * Ensures every sum class 0..18 has at least 1 seen pair so that all MBON
+   * compartments receive training.
+   * @param {number} [heldOutCount=20]
+   * @param {number} [seed=42]
+   */
+  getHeldOutSplit(heldOutCount = 20, seed = 42) {
+    const rng = K.mulberry32(seed);
+    // Group pairs by sum
+    const bySum = Array.from({ length: 19 }, () => []);
+    for (const p of this.allPairs) {
+      bySum[p.target].push(p.key);
+    }
+
+    // Pairs that can be candidates for hold-out (sums that have > 1 pair)
+    const candidates = [];
+    for (let s = 0; s < 19; s++) {
+      if (bySum[s].length > 1) {
+        // Can hold out up to length - 1 pairs
+        candidates.push(...bySum[s]);
+      }
+    }
+
+    // Shuffle candidates
+    const shuffled = [...candidates];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    // Pick held-out pairs while keeping at least 1 pair per sum in train
+    const heldOut = new Set();
+    const trainCountPerSum = bySum.map((arr) => arr.length);
+
+    for (const key of shuffled) {
+      if (heldOut.size >= heldOutCount) break;
+      const [l, r] = key.split('+').map(Number);
+      const sum = l + r;
+      if (trainCountPerSum[sum] > 1) {
+        heldOut.add(key);
+        trainCountPerSum[sum]--;
+      }
+    }
+
+    const seen = new Set(this.allPairs.map((p) => p.key).filter((k) => !heldOut.has(k)));
+    return { seenPairs: seen, unseenPairs: heldOut };
+  }
+
+  /**
+   * Split pairs for commutativity testing:
+   * Selects pairs where A < B, assigns A+B to train (seen) and B+A to test (held-out).
+   * Remaining pairs are assigned to train.
+   * @param {number} [pairCount=20]
+   * @param {number} [seed=42]
+   */
+  getCommutativeSplit(pairCount = 20, seed = 42) {
+    const rng = K.mulberry32(seed);
+    const symmetricPairs = [];
+    for (let a = 0; a <= 9; a++) {
+      for (let b = a + 1; b <= 9; b++) {
+        symmetricPairs.push({ fwd: `${a}+${b}`, rev: `${b}+${a}`, sum: a + b });
+      }
+    }
+
+    // Shuffle symmetric pairs
+    for (let i = symmetricPairs.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [symmetricPairs[i], symmetricPairs[j]] = [symmetricPairs[j], symmetricPairs[i]];
+    }
+
+    const testPairs = symmetricPairs.slice(0, pairCount);
+    const heldOutReversed = new Set(testPairs.map((p) => p.rev));
+    const forwardTrained = new Set(testPairs.map((p) => p.fwd));
+    const seen = new Set(this.allPairs.map((p) => p.key).filter((k) => !heldOutReversed.has(k)));
+
+    return {
+      seenPairs: seen,
+      heldOutReversed,
+      forwardTrained,
+    };
+  }
 }
