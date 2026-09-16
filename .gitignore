@@ -12,3 +12,4 @@ juku/state/*/*
 # Raw dataset caches and scratch runs
 juku/data/.raw_*
 results/addition_test_run/
+results/mb1_100k/

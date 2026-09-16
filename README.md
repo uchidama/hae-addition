@@ -54,9 +54,13 @@ It is a static site (nginx) plus three small Node processes (pm2).
 
 See [docs/architecture.md](docs/architecture.md) for detailed data flow, network parameters, and plasticity rules.
 
-### Running MNIST Baseline Evaluation
+### Live Interactive Web Demo (GitHub Pages)
 
-To evaluate the learned weights (`brain-110217.bin.gz`) against the standard (450 samples) and full (9,020 samples) MNIST test sets:
+- 🪰 **足し算デモ (0〜9 + 0〜9 → 0〜18)**: **https://uchidama.github.io/hae-addition/tashizan/**
+- 🔢 **数字1〜9 読み書きデモ**: **https://uchidama.github.io/hae-addition/suji/**
+- ✍️ **ひらがな 読み書きデモ**: **https://uchidama.github.io/hae-addition/**
+
+### Running Locally
 
 ```sh
 node scripts/serve.mjs  # opens http://localhost:3000/tashizan/
