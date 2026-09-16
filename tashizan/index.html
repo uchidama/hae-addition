@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ハエに足し算を教えてみた — キノコ体による手書き数字の足し算</title>
+<meta name="description" content="ショウジョウバエのキノコ体モデルに手書き数字2枚の足し算（0〜9 + 0〜9 → 0〜18）を学習させたインタラクティブデモ。">
+<style>
+  :root {
+    --bg: #0d1014;
+    --panel: #151a20;
+    --line: #252d36;
+    --ink: #e6edf3;
+    --dim: #8a97a6;
+    --ok: #54d98c;
+    --wrong: #ff6b6b;
+    --accent: #59b7ff;
+    --warn: #ffb454;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.6 system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    padding: 20px 16px 40px;
+    max-width: 820px;
+    margin-inline: auto;
+  }
+  h1 { font-size: 1.4rem; margin: 0 0 6px; display: flex; align-items: center; gap: 8px; }
+  .sub { color: var(--dim); font-size: 0.85rem; margin: 0 0 16px; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  h2 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--dim);
+    margin: 0 0 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  /* 3D Fly Stage */
+  #flyCanvas {
+    display: block;
+    width: 100%;
+    height: 220px;
+    border-radius: 10px;
+    background: radial-gradient(120% 100% at 50% 20%, #1c242e, #0a0d11);
+  }
+  /* Quiz / Drawing Area */
+  .quiz-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 12px 0 16px;
+  }
+  .operand-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .canvas-wrapper {
+    position: relative;
+    width: 132px;
+    height: 132px;
+  }
+  .draw-pad {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    background: #080b0e;
+    border: 1px dashed #32404e;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .draw-pad:focus { outline: none; border-color: var(--accent); }
+  .preview-cvs {
+    image-rendering: pixelated;
+    width: 36px;
+    height: 36px;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+    background: #000;
+  }
+  .op-sign {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--dim);
+  }
+  .result-box {
+    width: 110px;
+    height: 132px;
+    background: #10141a;
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .result-box.correct { border-color: var(--ok); background: #0e1e16; }
+  .result-box.incorrect { border-color: var(--wrong); background: #221215; }
+  .predicted-sum {
+    font-size: 3.2rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .result-label {
+    font-size: 0.75rem;
+    color: var(--dim);
+    margin-top: 4px;
+  }
+  .badge-tag {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    font-size: 0.68rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .badge-tag.ok { background: var(--ok); color: #052210; }
+  .badge-tag.no { background: var(--wrong); color: #fff; }
+  /* Controls */
+  .btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 14px;
+  }
+  button {
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--ink);
+    background: #1b232c;
+    border: 1px solid #2e3b48;
+    border-radius: 8px;
+    padding: 9px 16px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  button:hover:not(:disabled) { background: #26323f; border-color: #485c70; }
+  button.primary { background: #1a4267; border-color: #2b679e; color: #d6ecff; }
+  button.primary:hover:not(:disabled) { background: #235787; border-color: #3b88cf; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  /* Status Banner */
+  #statusBanner {
+    font-size: 0.85rem;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: #1b2229;
+    color: var(--dim);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #statusBanner.ready { background: #13241b; color: #a3e8bc; }
+  /* 19 Classes Drive Meter */
+  .drive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .drive-item {
+    background: #0f141a;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 0.78rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    transition: border-color 0.2s;
+  }
+  .drive-item.winner {
+    border-color: var(--accent);
+    background: #142433;
+  }
+  .drive-header {
+    display: flex;
+    justify-content: space-between;
+    font-variant-numeric: tabular-nums;
+  }
+  .drive-bar-bg {
+    height: 5px;
+    background: #1d252e;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .drive-bar-fill {
+    height: 100%;
+    background: #415569;
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  .drive-item.winner .drive-bar-fill { background: var(--accent); }
+  nav.links {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    font-size: 0.85rem;
+  }
+  nav.links a { color: var(--accent); text-decoration: none; }
+  nav.links a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<h1><span>🪰</span> ハエに足し算を教えてみた</h1>
+<div class="sub">
+  ショウジョウバエ脳モデル（キノコ体）に 2枚の手書き数字（0〜9）を見せて足し算（0〜18）を解かせる実験デモ
+</div>
+
+<div id="statusBanner">
+  <span>⏳</span> <span id="statusText">ハエ脳モデル (WebAssembly / FlyWire Connectome) を準備中...</span>
+</div>
+
+<!-- 3D Fly View -->
+<div class="panel">
+  <h2><span>ハエの様子 (3D 生体モデル)</span><small id="flyStateText" style="color:var(--dim)">待機中</small></h2>
+  <canvas id="flyCanvas"></canvas>
+</div>
+
+<!-- Addition Quiz Stage -->
+<div class="panel">
+  <h2><span>足し算 出題ステージ (0〜9 + 0〜9 → 0〜18)</span></h2>
+
+  <div class="quiz-container">
+    <!-- Left Operand -->
+    <div class="operand-card">
+      <div class="canvas-wrapper">
+        <canvas id="padLeft" class="draw-pad" width="132" height="132"></canvas>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <canvas id="prevLeft" class="preview-cvs" width="12" height="12"></canvas>
+        <span style="font-size:0.75rem;color:var(--dim)">数字 A</span>
+      </div>
+    </div>
+
+    <div class="op-sign">+</div>
+
+    <!-- Right Operand -->
+    <div class="operand-card">
+      <div class="canvas-wrapper">
+        <canvas id="padRight" class="draw-pad" width="132" height="132"></canvas>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <canvas id="prevRight" class="preview-cvs" width="12" height="12"></canvas>
+        <span style="font-size:0.75rem;color:var(--dim)">数字 B</span>
+      </div>
+    </div>
+
+    <div class="op-sign">=</div>
+
+    <!-- Result / Prediction -->
+    <div class="result-box" id="resultBox">
+      <span class="badge-tag" id="badgeTag" style="display:none"></span>
+      <span class="predicted-sum" id="predSum">?</span>
+      <span class="result-label" id="resultLabel">ハエの予測</span>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="btn-row">
+    <button id="btnSample" class="primary"><span>🎲</span> MNISTからランダム出題</button>
+    <button id="btnSolve"><span>🧠</span> 手書きをハエに解かせる</button>
+    <button id="btnClear"><span>🧹</span> 手書きクリア</button>
+  </div>
+</div>
+
+<!-- 19-class MBON Drive -->
+<div class="panel">
+  <h2>
+    <span>19クラス MBON 相対ドライブ (和 0〜18)</span>
+    <small style="color:var(--dim);font-weight:normal">※ドライブが最も低いコンパートメントを答えとして判定</small>
+  </h2>
+  <div class="drive-grid" id="driveGrid"></div>
+</div>
+
+<nav class="links">
+  <a href="/suji/">👈 数字1〜9の読み書きデモ</a>
+  <a href="/">👈 ひらがな46文字デモ</a>
+  <a href="https://github.com/uchidama/hae-addition" target="_blank" rel="noopener">GitHub (hae-addition)</a>
+</nav>
+
+<script type="module" src="./page.js?v=1"></script>
+</body>
+</html>
