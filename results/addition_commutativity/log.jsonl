@@ -1,0 +1,11 @@
+{"step":0,"test_acc":0.01,"seen_acc":0.0125,"unseen_acc":null,"comm_source_acc":0,"comm_gen_acc":0,"run_acc":null,"timestamp":1789589333801}
+{"step":500,"test_acc":0.12333333333333334,"seen_acc":0.13333333333333333,"unseen_acc":null,"comm_source_acc":0.18333333333333332,"comm_gen_acc":0.08333333333333333,"run_acc":0.06,"timestamp":1789589456200}
+{"step":1000,"test_acc":0.09333333333333334,"seen_acc":0.1125,"unseen_acc":null,"comm_source_acc":0.03333333333333333,"comm_gen_acc":0.016666666666666666,"run_acc":0.115,"timestamp":1789589578034}
+{"step":1500,"test_acc":0.10666666666666667,"seen_acc":0.12083333333333333,"unseen_acc":null,"comm_source_acc":0.05,"comm_gen_acc":0.05,"run_acc":0.105,"timestamp":1789589697022}
+{"step":2000,"test_acc":0.11,"seen_acc":0.13333333333333333,"unseen_acc":null,"comm_source_acc":0.06666666666666667,"comm_gen_acc":0.016666666666666666,"run_acc":0.115,"timestamp":1789589815597}
+{"step":2500,"test_acc":0.12,"seen_acc":0.15,"unseen_acc":null,"comm_source_acc":0.05,"comm_gen_acc":0,"run_acc":0.115,"timestamp":1789589937583}
+{"step":3000,"test_acc":0.15333333333333332,"seen_acc":0.18333333333333332,"unseen_acc":null,"comm_source_acc":0.2,"comm_gen_acc":0.03333333333333333,"run_acc":0.115,"timestamp":1789590056698}
+{"step":3500,"test_acc":0.12666666666666668,"seen_acc":0.15,"unseen_acc":null,"comm_source_acc":0.13333333333333333,"comm_gen_acc":0.03333333333333333,"run_acc":0.14,"timestamp":1789590178938}
+{"step":4000,"test_acc":0.11,"seen_acc":0.11666666666666667,"unseen_acc":null,"comm_source_acc":0.15,"comm_gen_acc":0.08333333333333333,"run_acc":0.16,"timestamp":1789590295998}
+{"step":4500,"test_acc":0.16,"seen_acc":0.2,"unseen_acc":null,"comm_source_acc":0.15,"comm_gen_acc":0,"run_acc":0.15,"timestamp":1789590415838}
+{"step":5000,"test_acc":0.13666666666666666,"seen_acc":0.16666666666666666,"unseen_acc":null,"comm_source_acc":0.11666666666666667,"comm_gen_acc":0.016666666666666666,"run_acc":0.115,"timestamp":1789590535666}
