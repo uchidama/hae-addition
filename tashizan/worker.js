@@ -54,14 +54,14 @@ async function init() {
   try {
     post({ type: 'progress', phase: 'downloading_brain', message: 'ハエ脳モデル (WASM/Connectome) を読み込み中...' });
 
-    let mb1Url = new URL('../results/mb1_digits/brain-mb1-final.bin.gz?v=5', HERE);
+    let mb1Url = new URL('../results/mb1_digits/brain-mb1-final.bin.gz?v=100k', HERE);
     try {
       const chk = await fetch(mb1Url, { method: 'HEAD' });
       if (!chk.ok) {
-        mb1Url = new URL('../results/mb1_digits/brain-mb1-10000.bin.gz', HERE);
+        mb1Url = new URL('../results/mb1_digits/brain-mb1-100000.bin.gz?v=100k', HERE);
       }
     } catch {
-      mb1Url = new URL('../results/mb1_digits/brain-mb1-10000.bin.gz', HERE);
+      mb1Url = new URL('../results/mb1_digits/brain-mb1-100000.bin.gz?v=100k', HERE);
     }
 
     R = await makeDualMBReader({

@@ -4,7 +4,7 @@
 import { FlagFly } from '../suji/flag.js?v=38';
 import { Sound } from '../juku/sound.js?v=1';
 
-const worker = new Worker(new URL('./worker.js?v=5', import.meta.url), { type: 'module' });
+const worker = new Worker(new URL('./worker.js?v=100k', import.meta.url), { type: 'module' });
 const sound = new Sound();
 
 // UI Elements
@@ -994,7 +994,7 @@ function nextQuestion(delay = 0, awaitFly = false) {
 function startIfReady() {
   if (isFlyReady && isWorkerReady) {
     busy = false;
-    statusEl.textContent = '準備完了。10,000ステップ学習済みのハエ脳（正答率 ~75%）で足し算を開始します。';
+    statusEl.textContent = '準備完了。100,000ステップ学習済みのハエ脳（数字認識 89.0% / 足し算 ~80%）で足し算を開始します。';
     setAuto(true);
   }
 }
