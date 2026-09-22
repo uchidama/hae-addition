@@ -408,7 +408,7 @@
     <span><i id="legend-test"></i>テスト: 練習に使わない 5 フォント × 習った文字（段が上がると文字が増えるので一度下がる）</span>
     <span><i id="legend-run"></i>練習中: 直近 500 問（どれも答える時点では初めて見る絵）</span>
   </div>
-  <p class="note">縦線がレベルアップ。全記録は <a href="../juku/state/hiragana/log.jsonl">log.jsonl</a>。</p>
+  <p class="note">縦線がレベルアップ。全記録は <a href="./juku/state/hiragana/log.jsonl">log.jsonl</a>。</p>
 </div>
 
 <div class="panel" data-tab="about">
@@ -472,14 +472,14 @@
   <nav class="olist">
     <a href="./tashizan/" style="border-color:#368ad4;background:#121d28"><b>【NEW】ハエに足し算を教えてみた (0〜9 + 0〜9)</b><small>2段キノコ体（Dual-MB）による手書き数字2枚の足し算学習デモ</small></a>
     <a href="./"><b>ひらがな読み書き学習したハエ</b><small>46 文字を練習した脳が、字を読んで地面に書く</small></a>
-    <a href="/suji/"><b>数字を読む蠅</b><small>MNIST の数字 1〜9 を練習した脳</small></a>
-    <a href="/juku/kiroku.html"><b>みんなの手書きの記録</b><small>書かれた字と、蠅がどう読んだか</small></a>
-    <a href="/tataki/"><b>ハエたたき</b><small>1 分で何匹たたけるか</small></a>
-    <a href="/game2/"><b>ハエたたき 1 対 1</b><small>だれかと同じ場で競う</small></a>
-    <a href="/game/"><b>うんち陣取り</b><small>うんちを置いて蠅を集める対戦</small></a>
-    <a href="/kansatsu/"><b>蠅観察</b><small>群がる蠅をタップすると、その脳が見える</small></a>
-    <a href="/gakushu/"><b>匂いを覚えさせる</b><small>キノコ体の学習そのもの</small></a>
-    <a href="/meiro/"><b>迷路実験</b><small>脳で動く蠅と迷路</small></a>
+    <a href="./suji/"><b>数字を読む蠅</b><small>MNIST の数字 1〜9 を練習した脳</small></a>
+    <a href="./juku/kiroku.html"><b>みんなの手書きの記録</b><small>書かれた字と、蠅がどう読んだか</small></a>
+    <a href="./tataki/"><b>ハエたたき</b><small>1 分で何匹たたけるか</small></a>
+    <a href="./game2/"><b>ハエたたき 1 対 1</b><small>だれかと同じ場で競う</small></a>
+    <a href="./game/"><b>うんち陣取り</b><small>うんちを置いて蠅を集める対戦</small></a>
+    <a href="./kansatsu/"><b>蠅観察</b><small>群がる蠅をタップすると、その脳が見える</small></a>
+    <a href="./gakushu/"><b>匂いを覚えさせる</b><small>キノコ体の学習そのもの</small></a>
+    <a href="./meiro/"><b>迷路実験</b><small>脳で動く蠅と迷路</small></a>
     <a href="https://github.com/satorunet/hae" target="_blank" rel="noopener"><b>ソースコード（GitHub）</b><small>satorunet/hae — MIT ライセンス。学習済みの脳と学習記録も含む</small></a>
   </nav>
   <h2 style="margin-top:18px"><span>使ったライブラリ・データ</span></h2>
@@ -516,8 +516,8 @@
 </nav>
 
 <script type="module">
-import { runPage } from '/juku/page.js?v=52';
-import { ROWS, INK } from '/hiragana/kana.mjs?v=2';
+import { runPage } from './juku/page.js?v=52';
+import { ROWS, INK } from './hiragana/kana.mjs?v=2';
 const ROWNAME = ['あ', 'か', 'さ', 'た', 'な', 'は', 'ま', 'や', 'ら', 'わ'];
 runPage({
   course: 'hiragana', rows: ROWS, padInk: INK, pen: 0.075,
