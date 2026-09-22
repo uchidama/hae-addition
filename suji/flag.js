@@ -95,7 +95,15 @@ export class FlagFly {
     this.strokes = S;
     this.loco = new LocoMap(L);
 
-    const r = this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: true });
+    let r;
+    try {
+      r = this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: true });
+    } catch (e) {
+      console.warn('FlagFly: initial WebGLRenderer creation failed, retrying without antialias:', e.message);
+      r = this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: false, alpha: true });
+    }
+    const isGL2 = r.capabilities && r.capabilities.isWebGL2;
+    console.info(`[FlagFly] 3D fly renderer ready (${isGL2 ? 'WebGL 2' : 'WebGL 1 fallback'})`);
     r.setPixelRatio(Math.min(2, devicePixelRatio || 1));
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;
